@@ -412,7 +412,7 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
                 h={['28px', '32px']}
                 w={['28px', '32px']}
                 borderRadius={'md'}
-                bg={isSpeaking || isChatting ? '' : !havInput ? '#E5E5E5' : 'primary.500'}
+                bg={isSpeaking || isChatting ? '' : !havInput ? '#E5E5E5' : '#a882fe'}
                 cursor={havInput ? 'pointer' : 'not-allowed'}
                 lineHeight={1}
                 onClick={() => {

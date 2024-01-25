@@ -10,8 +10,11 @@ import React, {
 } from 'react';
 import Script from 'next/script';
 import { throttle } from 'lodash';
+// ExportChatType 对话记录导出文件类型
 import type { ExportChatType } from '@/types/chat.d';
+// 对话记录的类型
 import type { ChatItemType, ChatSiteItemType } from '@fastgpt/global/core/chat/type.d';
+// 对话记录的内容资源来源类型
 import type { ChatHistoryItemResType } from '@fastgpt/global/core/chat/type.d';
 import { useToast } from '@/web/common/hooks/useToast';
 import { useAudioPlay } from '@/web/common/utils/voice';
@@ -124,6 +127,7 @@ type Props = {
   onDelMessage?: (e: { contentId?: string; index: number }) => void;
 };
 
+// 组件：ChatBox对话组件
 const ChatBox = (
   {
     feedbackType = FeedbackTypeEnum.hidden,
@@ -145,17 +149,22 @@ const ChatBox = (
   }: Props,
   ref: ForwardedRef<ComponentRef>
 ) => {
+  // 指向对话容器Box组件
   const ChatBoxRef = useRef<HTMLDivElement>(null);
   const theme = useTheme();
   const router = useRouter();
+  // 国际化
   const { t } = useTranslation();
   const { toast } = useToast();
+  // isPc：是否是PC端
   const { isPc, setLoading } = useSystemStore();
   const TextareaDom = useRef<HTMLTextAreaElement>(null);
   const chatController = useRef(new AbortController());
   const questionGuideController = useRef(new AbortController());
   const isNewChatReplace = useRef(false);
 
+  // 一些内部状态：
+  // chatHistory：对话记录数据列表
   const [refresh, setRefresh] = useState(false);
   const [variables, setVariables] = useState<Record<string, any>>({}); // settings variable
   const [chatHistory, setChatHistory] = useState<ChatSiteItemType[]>([]);
@@ -167,6 +176,8 @@ const ChatBox = (
   const [adminMarkData, setAdminMarkData] = useState<AdminMarkType & { chatItemId: string }>();
   const [questionGuides, setQuestionGuide] = useState<string[]>([]);
 
+  // useMemo是一种性能优化手段：它在每次重新渲染的时候能够缓存计算的结果。
+  // 是否正在对话中
   const isChatting = useMemo(
     () =>
       chatHistory[chatHistory.length - 1] &&
@@ -223,8 +234,9 @@ const ChatBox = (
   );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const generatingMessage = ({ text = '', status, name }: generatingMessageProps) => {
-    setChatHistory((state) =>
-      state.map((item, index) => {
+    setChatHistory((state) => {
+      console.log('generatingMessage ', state);
+      return state.map((item, index) => {
         if (index !== state.length - 1) return item;
         return {
           ...item,
@@ -240,8 +252,8 @@ const ChatBox = (
               }
             : {})
         };
-      })
-    );
+      });
+    });
     generatingScroll();
   };
 
@@ -288,7 +300,7 @@ const ChatBox = (
   );
 
   /**
-   * user confirm send prompt
+   * user confirm send prompt | 用户确认发送提示词
    */
   const sendPrompt = useCallback(
     async (variables: Record<string, any> = {}, inputVal = '', history = chatHistory) => {
@@ -430,7 +442,7 @@ const ChatBox = (
     ]
   );
 
-  // retry input
+  // retry input | 重新查询
   const retryInput = useCallback(
     async (index: number) => {
       if (!onDelMessage) return;
@@ -450,7 +462,8 @@ const ChatBox = (
     },
     [chatHistory, onDelMessage, sendPrompt, setLoading, variables]
   );
-  // delete one message
+
+  // delete one message | 删除一条记录
   const delOneMessage = useCallback(
     ({ dataId, index }: { dataId?: string; index: number }) => {
       setChatHistory((state) => state.filter((chat) => chat.dataId !== dataId));
@@ -462,7 +475,7 @@ const ChatBox = (
     [onDelMessage]
   );
 
-  // output data
+  // output data | 使用命令式句柄（imperative handle）暴露受限的方法集
   useImperativeHandle(ref, () => ({
     getChatHistories: () => chatHistory,
     resetVariables(e) {
@@ -482,12 +495,12 @@ const ChatBox = (
     sendPrompt: (question: string) => handleSubmit((item) => sendPrompt(item, question))()
   }));
 
-  /* style start */
+  /* style start | 样式 start */
   const MessageCardStyle: BoxProps = {
     px: 4,
     py: 3,
     borderRadius: '0 8px 8px 8px',
-    boxShadow: '0 0 8px rgba(0,0,0,0.15)',
+    boxShadow: '0 0 4px rgb(212, 212, 212)',
     display: 'inline-block',
     maxW: ['calc(100% - 25px)', 'calc(100% - 40px)']
   };
@@ -516,7 +529,7 @@ const ChatBox = (
       name: t(chatContent.moduleName || '') || t('common.Loading')
     };
   }, [chatHistory, isChatting, t]);
-  /* style end */
+  /* style end | 样式 end */
 
   // page change and abort request
   useEffect(() => {
@@ -530,7 +543,7 @@ const ChatBox = (
     };
   }, [router.query]);
 
-  // add listener
+  // add listener | 添加监听器
   useEffect(() => {
     const windowMessage = ({ data }: MessageEvent<{ type: 'sendPrompt'; text: string }>) => {
       if (data?.type === 'sendPrompt' && data?.text) {
@@ -555,15 +568,18 @@ const ChatBox = (
     };
   }, [handleSubmit, resetInputVal, sendPrompt]);
 
+  // JSX组件
   return (
-    <Flex flexDirection={'column'} h={'100%'}>
+    <Flex flexDirection={'column'} h={'100%'} bg="myGray.100">
       <Script src="/js/html2pdf.bundle.min.js" strategy="lazyOnload"></Script>
 
-      {/* chat box container */}
+      {/* chat box container | 对话框容器 */}
       <Box ref={ChatBoxRef} flex={'1 0 0'} h={0} w={'100%'} overflow={'overlay'} px={[4, 0]} pb={3}>
         <Box id="chat-container" maxW={['100%', '92%']} h={'100%'} mx={'auto'}>
+          {/* 是否展示空试图 */}
           {showEmpty && <Empty />}
 
+          {/* 欢迎文案 */}
           {!!welcomeText && (
             <Box py={3}>
               {/* avatar */}
@@ -576,6 +592,7 @@ const ChatBox = (
               </Box>
             </Box>
           )}
+
           {/* variable input */}
           {!!variableModules?.length && (
             <Box py={3}>
@@ -646,13 +663,14 @@ const ChatBox = (
             </Box>
           )}
 
-          {/* chat history */}
+          {/* chat history | 对话记录列表 */}
           <Box id={'history'}>
             {chatHistory.map((item, index) => (
               <Box key={item.dataId} py={5}>
+                {/* 人类发言 */}
                 {item.obj === 'Human' && (
                   <>
-                    {/* control icon */}
+                    {/* control icon | 控制图标 */}
                     <Flex w={'100%'} alignItems={'center'} justifyContent={'flex-end'}>
                       <ChatController
                         chat={item}
@@ -667,12 +685,13 @@ const ChatBox = (
                       />
                       <ChatAvatar src={userAvatar} type={'Human'} />
                     </Flex>
-                    {/* content */}
+                    {/* content | 对话内容 */}
                     <Box mt={['6px', 2]} textAlign={'right'}>
                       <Card
                         className="markdown"
                         {...MessageCardStyle}
-                        bg={'primary.200'}
+                        color="white"
+                        bg={'primary.humanGradient'}
                         borderRadius={'8px 0 8px 8px'}
                         textAlign={'left'}
                       >
@@ -681,6 +700,8 @@ const ChatBox = (
                     </Box>
                   </>
                 )}
+
+                {/* AI发言 */}
                 {item.obj === 'AI' && (
                   <>
                     {/* control icon */}
@@ -837,7 +858,7 @@ const ChatBox = (
                         </Flex>
                       )}
                     </Flex>
-                    {/* content */}
+                    {/* content | 对话内容 */}
                     <Box textAlign={'left'} mt={['6px', 2]}>
                       <Card bg={'white'} {...MessageCardStyle}>
                         <Markdown
@@ -930,7 +951,7 @@ const ChatBox = (
           </Box>
         </Box>
       </Box>
-      {/* message input */}
+      {/* message input | 对话输入框组件 */}
       {onStartChat && variableIsFinish && active ? (
         <MessageInput
           onChange={(e) => {
@@ -1041,8 +1062,10 @@ const ChatBox = (
   );
 };
 
+// 导出对话组件
 export default React.memo(forwardRef(ChatBox));
 
+// 自定义Hook：useChatBox - 导出对话记录到文件
 export const useChatBox = () => {
   const onExportChat = useCallback(
     ({ type, history }: { type: ExportChatType; history: ChatItemType[] }) => {
@@ -1115,6 +1138,7 @@ export const useChatBox = () => {
   };
 };
 
+// 组件：？
 function VariableLabel({
   required = false,
   children
@@ -1139,23 +1163,28 @@ function VariableLabel({
     </Box>
   );
 }
+
+// 组件：头像组件
 function ChatAvatar({ src, type }: { src?: string; type: 'Human' | 'AI' }) {
+  // console.log("ChatAvatar src", src);
+
   const theme = useTheme();
   return (
     <Box
-      w={['28px', '34px']}
-      h={['28px', '34px']}
-      p={'2px'}
-      borderRadius={'sm'}
+      w={['36px', '36px']}
+      h={['36px', '36px']}
+      p={'0px'}
+      borderRadius={'50%'}
       border={theme.borders.base}
-      boxShadow={'0 0 5px rgba(0,0,0,0.1)'}
+      boxShadow={'0 0 4px rgb(212,212,212)'}
       bg={type === 'Human' ? 'white' : 'primary.50'}
     >
-      <Avatar src={src} w={'100%'} h={'100%'} />
+      <Avatar src={src} w={'100%'} h={'100%'} borderRadius={'50%'} />
     </Box>
   );
 }
 
+// 组件：Empty空试图
 function Empty() {
   const { data: chatProblem } = useMarkdown({ url: '/chatProblem.md' });
   const { data: versionIntro } = useMarkdown({ url: '/versionIntro.md' });
@@ -1173,6 +1202,7 @@ function Empty() {
   );
 }
 
+// 组件：对话记录 - 单条记录操作：复制、删除、朗读、反馈（满意、不满意）、重新询问
 function ChatController({
   chat,
   setChatHistory,
@@ -1208,7 +1238,7 @@ function ChatController({
     ttsConfig
   });
   const controlIconStyle = {
-    w: '14px',
+    w: '16px',
     cursor: 'pointer',
     p: 1,
     bg: 'white',

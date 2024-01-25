@@ -4,6 +4,8 @@ import { AuthModeType } from '../type';
 import { authOutLinkValid } from './outLink';
 
 export const authCert = async (props: AuthModeType) => {
+  // console.log("AuthCert >> props", props);
+
   const result = await parseHeaderCert(props);
 
   return {

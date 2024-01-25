@@ -42,12 +42,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
 }
 
+// 默认FeConfig配置
 const defaultFeConfigs: FastGPTFeConfigsType = {
   show_emptyChat: true,
-  show_git: true,
+  show_git: false,
   docUrl: 'https://doc.fastgpt.in',
   openAPIDocUrl: 'https://doc.fastgpt.in/docs/development/openapi',
-  systemTitle: 'FastGPT',
+  systemTitle: '恒达微波-小达',
   concatMd:
     '* 项目开源地址: [FastGPT GitHub](https://github.com/labring/FastGPT)\n* 交流群: ![](https://doc.fastgpt.in/wechat-fastgpt.webp)',
   limit: {
@@ -63,8 +64,10 @@ export async function getInitConfig() {
   global.systemInitd = true;
 
   try {
+    // 连接到数据库
     await connectToDatabase();
 
+    // 初始化
     await Promise.all([
       initGlobal(),
       initSystemConfig(),

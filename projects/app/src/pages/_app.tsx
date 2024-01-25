@@ -35,7 +35,10 @@ const queryClient = new QueryClient({
   }
 });
 
+// 整个项目的入口组件
 function App({ Component, pageProps }: AppProps) {
+  console.log('App >> Component', Component, ', pageProps', pageProps);
+
   const router = useRouter();
   const { hiId } = router.query as { hiId?: string };
   const { i18n } = useTranslation();
@@ -112,6 +115,8 @@ function App({ Component, pageProps }: AppProps) {
         />
         <link rel="icon" href={feConfigs.favicon || process.env.SYSTEM_FAVICON} />
       </Head>
+
+      {/* 加载脚本 */}
       {scripts?.map((item, i) => <Script key={i} strategy="lazyOnload" {...item}></Script>)}
 
       <QueryClientProvider client={queryClient}>

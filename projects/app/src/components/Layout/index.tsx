@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic';
 import Auth from './auth';
 import Navbar from './navbar';
 import NavbarPhone from './navbarPhone';
+
 const UpdateInviteModal = dynamic(
   () => import('@/components/support/user/team/UpdateInviteModal'),
   { ssr: false }
@@ -38,23 +39,28 @@ const phoneUnShowLayoutRoute: Record<string, boolean> = {
 };
 
 const Layout = ({ children }: { children: JSX.Element }) => {
+  console.log('Layout children', children);
+
   const router = useRouter();
   const { colorMode, setColorMode } = useColorMode();
   const { Loading } = useLoading();
   const { loading, setScreenWidth, isPc } = useSystemStore();
   const { userInfo } = useUserStore();
 
+  // 是否是聊天页
   const isChatPage = useMemo(
     () => router.pathname === '/chat' && Object.values(router.query).join('').length !== 0,
     [router.pathname, router.query]
   );
 
+  // 设置颜色模式
   useEffect(() => {
     if (colorMode === 'dark' && router.pathname !== '/chat') {
       setColorMode('light');
     }
   }, [colorMode, router.pathname, setColorMode]);
 
+  // 监听窗口大小改变
   useEffect(() => {
     const resize = throttle(() => {
       setScreenWidth(document.documentElement.clientWidth);
@@ -69,6 +75,7 @@ const Layout = ({ children }: { children: JSX.Element }) => {
     };
   }, [setScreenWidth]);
 
+  // 获取未读消息数量
   const { data: unread = 0 } = useQuery(['getUnreadCount'], getUnreadCount, {
     enabled: !!userInfo && !!feConfigs.isPlus,
     refetchInterval: 10000

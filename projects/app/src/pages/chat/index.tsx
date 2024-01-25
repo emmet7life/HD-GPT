@@ -249,19 +249,24 @@ const Chat = ({ appId, chatId }: { appId: string; chatId: string }) => {
         <title>{chatData.app.name}</title>
       </Head>
       {/* pc show myself apps */}
+      {/* 左侧面板：退出聊天、聊天应用选择 */}
       {isPc && (
         <Box borderRight={theme.borders.base} w={'220px'} flexShrink={0}>
           <SliderApps appId={appId} />
         </Box>
       )}
 
+      {/* 右侧面板：新对话、对话选择、对话记录 */}
       <PageContainer flex={'1 0 0'} w={0} p={[0, '16px']} position={'relative'}>
         <Flex h={'100%'} flexDirection={['column', 'row']} bg={'white'}>
           {/* pc always show history. */}
+          {/* 新对话、对话选择容器 */}
           {((children: React.ReactNode) => {
             return isPc || !appId ? (
+              // PC端容器
               <SideBar>{children}</SideBar>
             ) : (
+              // 移动端容器
               <Drawer
                 isOpen={isOpenSlider}
                 placement="left"
@@ -269,11 +274,12 @@ const Chat = ({ appId, chatId }: { appId: string; chatId: string }) => {
                 size={'xs'}
                 onClose={onCloseSlider}
               >
-                <DrawerOverlay backgroundColor={'rgba(255,255,255,0.5)'} />
+                <DrawerOverlay backgroundColor={'rgba(0,0,0,0.3)'} />
                 <DrawerContent maxWidth={'250px'}>{children}</DrawerContent>
               </Drawer>
             );
           })(
+            // 新对话、对话选择面板组件
             <ChatHistorySlider
               appId={appId}
               appName={chatData.app.name}
@@ -319,7 +325,7 @@ const Chat = ({ appId, chatId }: { appId: string; chatId: string }) => {
               }}
             />
           )}
-          {/* chat container */}
+          {/* chat container | 对话记录窗口 */}
           <Flex
             position={'relative'}
             h={[0, '100%']}
@@ -327,7 +333,7 @@ const Chat = ({ appId, chatId }: { appId: string; chatId: string }) => {
             flex={'1 0 0'}
             flexDirection={'column'}
           >
-            {/* header */}
+            {/* header | 头部组件 */}
             <ChatHeader
               appAvatar={chatData.app.avatar}
               appName={chatData.app.name}
@@ -338,7 +344,7 @@ const Chat = ({ appId, chatId }: { appId: string; chatId: string }) => {
               showHistory
             />
 
-            {/* chat box */}
+            {/* chat box | 对话和对话记录组件 */}
             <Box flex={1}>
               <ChatBox
                 ref={ChatBoxRef}

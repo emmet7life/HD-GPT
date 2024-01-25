@@ -7,10 +7,10 @@ import { formatStorePrice2Read } from '@fastgpt/global/support/wallet/bill/tools
 import { getTokenLogin, putUserInfo } from '@/web/support/user/api';
 
 type State = {
-  userInfo: UserType | null;
-  initUserInfo: () => Promise<UserType>;
-  setUserInfo: (user: UserType | null) => void;
-  updateUserInfo: (user: UserUpdateParams) => Promise<void>;
+  userInfo: UserType | null; // 用户信息
+  initUserInfo: () => Promise<UserType>; // 初始化用户信息
+  setUserInfo: (user: UserType | null) => void; // 设置用户信息
+  updateUserInfo: (user: UserUpdateParams) => Promise<void>; // 更新用户信息
 };
 
 export const useUserStore = create<State>()(
@@ -20,6 +20,9 @@ export const useUserStore = create<State>()(
         userInfo: null,
         async initUserInfo() {
           const res = await getTokenLogin();
+
+          console.log('useUserStore >> initUserInfo getTokenLogin res', res);
+
           get().setUserInfo(res);
 
           return res;

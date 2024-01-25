@@ -375,7 +375,8 @@ export const theme = extendTheme({
       600: '#3370FF',
       700: '#2B5FD9',
       800: '#2450B5',
-      900: '#1D4091'
+      900: '#1D4091',
+      humanGradient: 'linear-gradient(to bottom right, #7960ff 0%, #a882fe 100%)'
     },
     red: {
       1: 'rgba(217,45,32,0.1)',
