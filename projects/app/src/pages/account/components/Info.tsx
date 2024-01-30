@@ -108,12 +108,12 @@ const UserInfo = () => {
         });
       } catch (err: any) {
         toast({
-          title: typeof err === 'string' ? err : '头像选择异常',
+          title: typeof err === 'string' ? err : t('common.error.Select avatar failed'),
           status: 'warning'
         });
       }
     },
-    [onclickSave, toast, userInfo]
+    [onclickSave, t, toast, userInfo]
   );
 
   useQuery(['init'], initUserInfo, {
@@ -271,28 +271,32 @@ const UserInfo = () => {
                 )}
               </Flex>
             </Box>
-            <Box mt={6} whiteSpace={'nowrap'} w={['85%', '300px']}>
-              <Flex alignItems={'center'}>
-                <Box flex={'1 0 0'} fontSize={'md'}>
-                  {t('support.user.team.Dataset usage')}:&nbsp;{datasetUsageMap.usedSize}/
-                  {datasetSub.maxSize}
+            {feConfigs?.show_pay && (
+              <Box mt={6} whiteSpace={'nowrap'} w={['85%', '300px']}>
+                <Flex alignItems={'center'}>
+                  <Box flex={'1 0 0'} fontSize={'md'}>
+                    {t('support.user.team.Dataset usage')}:&nbsp;{datasetUsageMap.usedSize}/
+                    {datasetSub.maxSize}
+                  </Box>
+                  {userInfo?.team?.canWrite && (
+                    <Button size={'sm'} onClick={onOpenSubDatasetModal}>
+                      {t('support.wallet.Buy more')}
+                    </Button>
+                  )}
+                </Flex>
+                <Box mt={1}>
+                  <Progress
+                    value={datasetUsageMap.value}
+                    colorScheme={datasetUsageMap.colorScheme}
+                    borderRadius={'md'}
+                    isAnimated
+                    hasStripe
+                    borderWidth={'1px'}
+                    borderColor={'borderColor.base'}
+                  />
                 </Box>
-                <Button size={'sm'} onClick={onOpenSubDatasetModal}>
-                  {t('support.wallet.Buy more')}
-                </Button>
-              </Flex>
-              <Box mt={1}>
-                <Progress
-                  value={datasetUsageMap.value}
-                  colorScheme={datasetUsageMap.colorScheme}
-                  borderRadius={'md'}
-                  isAnimated
-                  hasStripe
-                  borderWidth={'1px'}
-                  borderColor={'borderColor.base'}
-                />
               </Box>
-            </Box>
+            )}
           </>
         )}
 

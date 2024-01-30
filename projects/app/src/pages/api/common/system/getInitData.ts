@@ -56,7 +56,8 @@ const defaultFeConfigs: FastGPTFeConfigsType = {
     websiteSyncLimitMinuted: 0
   },
   scripts: [],
-  favicon: '/favicon.ico'
+  favicon: '/favicon.ico',
+  uploadFileMaxSize: 500
 };
 
 export async function getInitConfig() {

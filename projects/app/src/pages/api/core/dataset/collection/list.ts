@@ -7,7 +7,7 @@ import type { DatasetCollectionsListItemType } from '@/global/core/dataset/type.
 import type { GetDatasetCollectionsProps } from '@/global/core/api/datasetReq';
 import { PagingData } from '@/types';
 import { MongoDatasetCollection } from '@fastgpt/service/core/dataset/collection/schema';
-import { DatasetCollectionTypeEnum } from '@fastgpt/global/core/dataset/constant';
+import { DatasetCollectionTypeEnum } from '@fastgpt/global/core/dataset/constants';
 import { startQueue } from '@/service/utils/tools';
 import { authDataset } from '@fastgpt/service/support/permission/auth/dataset';
 import { DatasetDataCollectionName } from '@fastgpt/service/core/dataset/data/schema';
@@ -78,16 +78,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         {
           $match: match
         },
+        {
+          $sort: { updateTime: -1 }
+        },
+        {
+          $skip: (pageNum - 1) * pageSize
+        },
+        {
+          $limit: pageSize
+        },
         // count training data
         {
           $lookup: {
             from: DatasetTrainingCollectionName,
-            let: { id: '$_id' },
+            let: { id: '$_id', team_id: match.teamId, dataset_id: match.datasetId },
             pipeline: [
               {
                 $match: {
                   $expr: {
-                    $eq: ['$collectionId', '$$id']
+                    $and: [{ $eq: ['$teamId', '$$team_id'] }, { $eq: ['$collectionId', '$$id'] }]
                   }
                 }
               },
@@ -100,12 +109,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         {
           $lookup: {
             from: DatasetDataCollectionName,
-            let: { id: '$_id' },
+            let: { id: '$_id', team_id: match.teamId, dataset_id: match.datasetId },
             pipeline: [
               {
                 $match: {
                   $expr: {
-                    $eq: ['$collectionId', '$$id']
+                    $and: [
+                      { $eq: ['$teamId', '$$team_id'] },
+                      { $eq: ['$datasetId', '$$dataset_id'] },
+                      { $eq: ['$collectionId', '$$id'] }
+                    ]
                   }
                 }
               },
@@ -132,15 +145,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               $ifNull: [{ $arrayElemAt: ['$trainingCount.count', 0] }, 0]
             }
           }
-        },
-        {
-          $sort: { updateTime: -1 }
-        },
-        {
-          $skip: (pageNum - 1) * pageSize
-        },
-        {
-          $limit: pageSize
         }
       ]),
       MongoDatasetCollection.countDocuments(match)

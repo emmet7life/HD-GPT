@@ -10,11 +10,8 @@ import React, {
 } from 'react';
 import Script from 'next/script';
 import { throttle } from 'lodash';
-// ExportChatType 对话记录导出文件类型
 import type { ExportChatType } from '@/types/chat.d';
-// 对话记录的类型
 import type { ChatItemType, ChatSiteItemType } from '@fastgpt/global/core/chat/type.d';
-// 对话记录的内容资源来源类型
 import type { ChatHistoryItemResType } from '@fastgpt/global/core/chat/type.d';
 import { useToast } from '@/web/common/hooks/useToast';
 import { useAudioPlay } from '@/web/common/utils/voice';
@@ -39,7 +36,7 @@ import { adaptChat2GptMessages } from '@fastgpt/global/core/chat/adapt';
 import { useMarkdown } from '@/web/common/hooks/useMarkdown';
 import { ModuleItemType } from '@fastgpt/global/core/module/type.d';
 import { VariableInputEnum } from '@fastgpt/global/core/module/constants';
-import { useForm } from 'react-hook-form';
+import { UseFormReturn, useForm } from 'react-hook-form';
 import type { ChatMessageItemType } from '@fastgpt/global/core/ai/type.d';
 import { fileDownload } from '@/web/common/file/utils';
 import { htmlTemplate } from '@/constants/common';
@@ -68,7 +65,7 @@ const SelectMarkCollection = dynamic(() => import('./SelectMarkCollection'));
 import styles from './index.module.scss';
 import { postQuestionGuide } from '@/web/core/ai/api';
 import { splitGuideModule } from '@fastgpt/global/core/module/utils';
-import type { AppTTSConfigType } from '@fastgpt/global/core/module/type.d';
+import type { AppTTSConfigType, VariableItemType } from '@fastgpt/global/core/module/type.d';
 import MessageInput from './MessageInput';
 import { ModuleOutputKeyEnum } from '@fastgpt/global/core/module/constants';
 import ChatBoxDivider from '../core/chat/Divider';
@@ -101,6 +98,15 @@ enum FeedbackTypeEnum {
   hidden = 'hidden'
 }
 
+const MessageCardStyle: BoxProps = {
+  px: 4,
+  py: 3,
+  borderRadius: '0 8px 8px 8px',
+  boxShadow: '0 0 8px rgba(0,0,0,0.15)',
+  display: 'inline-block',
+  maxW: ['calc(100% - 25px)', 'calc(100% - 40px)']
+};
+
 type Props = {
   feedbackType?: `${FeedbackTypeEnum}`;
   showMarkIcon?: boolean; // admin mark dataset
@@ -127,7 +133,6 @@ type Props = {
   onDelMessage?: (e: { contentId?: string; index: number }) => void;
 };
 
-// 组件：ChatBox对话组件
 const ChatBox = (
   {
     feedbackType = FeedbackTypeEnum.hidden,
@@ -149,24 +154,18 @@ const ChatBox = (
   }: Props,
   ref: ForwardedRef<ComponentRef>
 ) => {
-  // 指向对话容器Box组件
   const ChatBoxRef = useRef<HTMLDivElement>(null);
   const theme = useTheme();
   const router = useRouter();
-  // 国际化
   const { t } = useTranslation();
   const { toast } = useToast();
-  // isPc：是否是PC端
   const { isPc, setLoading } = useSystemStore();
   const TextareaDom = useRef<HTMLTextAreaElement>(null);
   const chatController = useRef(new AbortController());
   const questionGuideController = useRef(new AbortController());
   const isNewChatReplace = useRef(false);
 
-  // 一些内部状态：
-  // chatHistory：对话记录数据列表
   const [refresh, setRefresh] = useState(false);
-  const [variables, setVariables] = useState<Record<string, any>>({}); // settings variable
   const [chatHistory, setChatHistory] = useState<ChatSiteItemType[]>([]);
   const [feedbackId, setFeedbackId] = useState<string>();
   const [readFeedbackData, setReadFeedbackData] = useState<{
@@ -176,8 +175,6 @@ const ChatBox = (
   const [adminMarkData, setAdminMarkData] = useState<AdminMarkType & { chatItemId: string }>();
   const [questionGuides, setQuestionGuide] = useState<string[]>([]);
 
-  // useMemo是一种性能优化手段：它在每次重新渲染的时候能够缓存计算的结果。
-  // 是否正在对话中
   const isChatting = useMemo(
     () =>
       chatHistory[chatHistory.length - 1] &&
@@ -191,7 +188,17 @@ const ChatBox = (
   );
 
   // compute variable input is finish.
-  const [variableInputFinish, setVariableInputFinish] = useState(false);
+  const chatForm = useForm<{
+    variables: Record<string, any>;
+  }>({
+    defaultValues: {
+      variables: {}
+    }
+  });
+  const { setValue, watch, handleSubmit } = chatForm;
+  const variables = watch('variables');
+
+  const [variableInputFinish, setVariableInputFinish] = useState(false); // clicked start chat button
   const variableIsFinish = useMemo(() => {
     if (!variableModules || variableModules.length === 0 || chatHistory.length > 0) return true;
 
@@ -205,21 +212,15 @@ const ChatBox = (
     return variableInputFinish;
   }, [chatHistory.length, variableInputFinish, variableModules, variables]);
 
-  const { register, reset, getValues, setValue, handleSubmit } = useForm<Record<string, any>>({
-    defaultValues: variables
-  });
-
   // 滚动到底部
-  const scrollToBottom = useCallback(
-    (behavior: 'smooth' | 'auto' = 'smooth') => {
-      if (!ChatBoxRef.current) return;
-      ChatBoxRef.current.scrollTo({
-        top: ChatBoxRef.current.scrollHeight,
-        behavior
-      });
-    },
-    [ChatBoxRef]
-  );
+  const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
+    if (!ChatBoxRef.current) return;
+    ChatBoxRef.current.scrollTo({
+      top: ChatBoxRef.current.scrollHeight,
+      behavior
+    });
+  };
+
   // 聊天信息生成中……获取当前滚动条位置，判断是否需要滚动到底部
   const generatingScroll = useCallback(
     throttle(() => {
@@ -233,29 +234,31 @@ const ChatBox = (
     []
   );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const generatingMessage = ({ text = '', status, name }: generatingMessageProps) => {
-    setChatHistory((state) => {
-      console.log('generatingMessage ', state);
-      return state.map((item, index) => {
-        if (index !== state.length - 1) return item;
-        return {
-          ...item,
-          ...(text
-            ? {
+  const generatingMessage = useCallback(
+    ({ text = '', status, name }: generatingMessageProps) => {
+      setChatHistory((state) =>
+        state.map((item, index) => {
+          if (index !== state.length - 1) return item;
+          return {
+            ...item,
+            ...(text
+              ? {
                 value: item.value + text
               }
-            : {}),
-          ...(status && name
-            ? {
+              : {}),
+            ...(status && name
+              ? {
                 status,
                 moduleName: name
               }
-            : {})
-        };
-      });
-    });
-    generatingScroll();
-  };
+              : {})
+          };
+        })
+      );
+      generatingScroll();
+    },
+    [generatingScroll]
+  );
 
   // 重置输入内容
   const resetInputVal = useCallback((val: string) => {
@@ -294,155 +297,163 @@ const ChatBox = (
             scrollToBottom();
           }, 100);
         }
-      } catch (error) {}
+      } catch (error) { }
     },
-    [questionGuide, scrollToBottom, shareId]
+    [questionGuide, shareId]
   );
 
   /**
-   * user confirm send prompt | 用户确认发送提示词
+   * user confirm send prompt
    */
   const sendPrompt = useCallback(
-    async (variables: Record<string, any> = {}, inputVal = '', history = chatHistory) => {
-      if (!onStartChat) return;
-      if (isChatting) {
-        toast({
-          title: '正在聊天中...请等待结束',
-          status: 'warning'
-        });
-        return;
-      }
-      questionGuideController.current?.abort('stop');
-      // get input value
-      const val = inputVal.trim();
-
-      if (!val) {
-        toast({
-          title: '内容为空',
-          status: 'warning'
-        });
-        return;
-      }
-
-      const newChatList: ChatSiteItemType[] = [
-        ...history,
-        {
-          dataId: nanoid(),
-          obj: 'Human',
-          value: val,
-          status: 'finish'
-        },
-        {
-          dataId: nanoid(),
-          obj: 'AI',
-          value: '',
-          status: 'loading'
+    ({
+      inputVal = '',
+      history = chatHistory
+    }: {
+      inputVal?: string;
+      history?: ChatSiteItemType[];
+    }) => {
+      handleSubmit(async ({ variables }) => {
+        if (!onStartChat) return;
+        if (isChatting) {
+          toast({
+            title: '正在聊天中...请等待结束',
+            status: 'warning'
+          });
+          return;
         }
-      ];
+        questionGuideController.current?.abort('stop');
+        // get input value
+        const val = inputVal.trim();
 
-      // 插入内容
-      setChatHistory(newChatList);
+        if (!val) {
+          toast({
+            title: '内容为空',
+            status: 'warning'
+          });
+          return;
+        }
 
-      // 清空输入内容
-      resetInputVal('');
-      setQuestionGuide([]);
-      setTimeout(() => {
-        scrollToBottom();
-      }, 100);
-      try {
-        // create abort obj
-        const abortSignal = new AbortController();
-        chatController.current = abortSignal;
+        const newChatList: ChatSiteItemType[] = [
+          ...history,
+          {
+            dataId: nanoid(),
+            obj: 'Human',
+            value: val,
+            status: 'finish'
+          },
+          {
+            dataId: nanoid(),
+            obj: 'AI',
+            value: '',
+            status: 'loading'
+          }
+        ];
 
-        const messages = adaptChat2GptMessages({ messages: newChatList, reserveId: true });
+        // 插入内容
+        setChatHistory(newChatList);
 
-        const {
-          responseData,
-          responseText,
-          isNewChat = false
-        } = await onStartChat({
-          chatList: newChatList.map((item) => ({
-            dataId: item.dataId,
-            obj: item.obj,
-            value: item.value,
-            status: item.status,
-            moduleName: item.moduleName
-          })),
-          messages,
-          controller: abortSignal,
-          generatingMessage,
-          variables
-        });
-
-        isNewChatReplace.current = isNewChat;
-
-        // set finish status
-        setChatHistory((state) =>
-          state.map((item, index) => {
-            if (index !== state.length - 1) return item;
-            return {
-              ...item,
-              status: 'finish',
-              responseData
-            };
-          })
-        );
-
+        // 清空输入内容
+        resetInputVal('');
+        setQuestionGuide([]);
         setTimeout(() => {
-          createQuestionGuide({
-            history: newChatList.map((item, i) =>
-              i === newChatList.length - 1
-                ? {
+          scrollToBottom();
+        }, 100);
+        try {
+          // create abort obj
+          const abortSignal = new AbortController();
+          chatController.current = abortSignal;
+
+          const messages = adaptChat2GptMessages({ messages: newChatList, reserveId: true });
+
+          const {
+            responseData,
+            responseText,
+            isNewChat = false
+          } = await onStartChat({
+            chatList: newChatList.map((item) => ({
+              dataId: item.dataId,
+              obj: item.obj,
+              value: item.value,
+              status: item.status,
+              moduleName: item.moduleName
+            })),
+            messages,
+            controller: abortSignal,
+            generatingMessage,
+            variables
+          });
+
+          isNewChatReplace.current = isNewChat;
+
+          // set finish status
+          setChatHistory((state) =>
+            state.map((item, index) => {
+              if (index !== state.length - 1) return item;
+              return {
+                ...item,
+                status: 'finish',
+                responseData
+              };
+            })
+          );
+
+          setTimeout(() => {
+            createQuestionGuide({
+              history: newChatList.map((item, i) =>
+                i === newChatList.length - 1
+                  ? {
                     ...item,
                     value: responseText
                   }
-                : item
-            )
+                  : item
+              )
+            });
+            generatingScroll();
+            isPc && TextareaDom.current?.focus();
+          }, 100);
+        } catch (err: any) {
+          toast({
+            title: t(getErrText(err, 'core.chat.error.Chat error')),
+            status: 'error',
+            duration: 5000,
+            isClosable: true
           });
-          generatingScroll();
-          isPc && TextareaDom.current?.focus();
-        }, 100);
-      } catch (err: any) {
-        toast({
-          title: t(getErrText(err, 'core.chat.error.Chat error')),
-          status: 'error',
-          duration: 5000,
-          isClosable: true
-        });
 
-        if (!err?.responseText) {
-          resetInputVal(inputVal);
-          setChatHistory(newChatList.slice(0, newChatList.length - 2));
+          if (!err?.responseText) {
+            resetInputVal(inputVal);
+            setChatHistory(newChatList.slice(0, newChatList.length - 2));
+          }
+
+          // set finish status
+          setChatHistory((state) =>
+            state.map((item, index) => {
+              if (index !== state.length - 1) return item;
+              return {
+                ...item,
+                status: 'finish'
+              };
+            })
+          );
         }
-
-        // set finish status
-        setChatHistory((state) =>
-          state.map((item, index) => {
-            if (index !== state.length - 1) return item;
-            return {
-              ...item,
-              status: 'finish'
-            };
-          })
-        );
-      }
+      })();
     },
     [
       chatHistory,
-      onStartChat,
-      isChatting,
-      resetInputVal,
-      toast,
-      scrollToBottom,
-      generatingMessage,
       createQuestionGuide,
+      generatingMessage,
       generatingScroll,
+      handleSubmit,
+      isChatting,
       isPc,
-      t
+      onStartChat,
+      resetInputVal,
+      t,
+      toast
     ]
   );
 
-  // retry input | 重新查询
+  // retry input
   const retryInput = useCallback(
     async (index: number) => {
       if (!onDelMessage) return;
@@ -456,14 +467,16 @@ const ChatBox = (
         );
         setChatHistory((state) => (index === 0 ? [] : state.slice(0, index)));
 
-        sendPrompt(variables, delHistory[0].value, chatHistory.slice(0, index));
-      } catch (error) {}
+        sendPrompt({
+          inputVal: delHistory[0].value,
+          history: chatHistory.slice(0, index)
+        });
+      } catch (error) { }
       setLoading(false);
     },
-    [chatHistory, onDelMessage, sendPrompt, setLoading, variables]
+    [chatHistory, onDelMessage, sendPrompt, setLoading]
   );
-
-  // delete one message | 删除一条记录
+  // delete one message
   const delOneMessage = useCallback(
     ({ dataId, index }: { dataId?: string; index: number }) => {
       setChatHistory((state) => state.filter((chat) => chat.dataId !== dataId));
@@ -475,7 +488,7 @@ const ChatBox = (
     [onDelMessage]
   );
 
-  // output data | 使用命令式句柄（imperative handle）暴露受限的方法集
+  // output data
   useImperativeHandle(ref, () => ({
     getChatHistories: () => chatHistory,
     resetVariables(e) {
@@ -484,27 +497,21 @@ const ChatBox = (
         defaultVal[item.key] = '';
       });
 
-      reset(e || defaultVal);
-      setVariables(e || defaultVal);
+      setValue('variables', e || defaultVal);
     },
     resetHistory(e) {
       setVariableInputFinish(!!e.length);
       setChatHistory(e);
     },
     scrollToBottom,
-    sendPrompt: (question: string) => handleSubmit((item) => sendPrompt(item, question))()
+    sendPrompt: (question: string) => {
+      sendPrompt({
+        inputVal: question
+      });
+    }
   }));
 
-  /* style start | 样式 start */
-  const MessageCardStyle: BoxProps = {
-    px: 4,
-    py: 3,
-    borderRadius: '0 8px 8px 8px',
-    boxShadow: '0 0 4px rgb(212, 212, 212)',
-    display: 'inline-block',
-    maxW: ['calc(100% - 25px)', 'calc(100% - 40px)']
-  };
-
+  /* style start */
   const showEmpty = useMemo(
     () =>
       feConfigs?.show_emptyChat &&
@@ -529,7 +536,7 @@ const ChatBox = (
       name: t(chatContent.moduleName || '') || t('common.Loading')
     };
   }, [chatHistory, isChatting, t]);
-  /* style end | 样式 end */
+  /* style end */
 
   // page change and abort request
   useEffect(() => {
@@ -543,18 +550,22 @@ const ChatBox = (
     };
   }, [router.query]);
 
-  // add listener | 添加监听器
+  // add listener
   useEffect(() => {
     const windowMessage = ({ data }: MessageEvent<{ type: 'sendPrompt'; text: string }>) => {
       if (data?.type === 'sendPrompt' && data?.text) {
-        handleSubmit((item) => sendPrompt(item, data.text))();
+        sendPrompt({
+          inputVal: data.text
+        });
       }
     };
     window.addEventListener('message', windowMessage);
 
     eventBus.on(EventNameEnum.sendQuestion, ({ text }: { text: string }) => {
       if (!text) return;
-      handleSubmit((data) => sendPrompt(data, text))();
+      sendPrompt({
+        inputVal: text
+      });
     });
     eventBus.on(EventNameEnum.editQuestion, ({ text }: { text: string }) => {
       if (!text) return;
@@ -566,132 +577,61 @@ const ChatBox = (
       eventBus.off(EventNameEnum.sendQuestion);
       eventBus.off(EventNameEnum.editQuestion);
     };
-  }, [handleSubmit, resetInputVal, sendPrompt]);
+  }, [resetInputVal, sendPrompt]);
 
-  // JSX组件
+  const onSubmitVariables = useCallback(
+    (data: Record<string, any>) => {
+      setVariableInputFinish(true);
+      onUpdateVariable?.(data);
+    },
+    [onUpdateVariable]
+  );
+
   return (
-    <Flex flexDirection={'column'} h={'100%'} bg="myGray.100">
+    <Flex flexDirection={'column'} h={'100%'}>
       <Script src="/js/html2pdf.bundle.min.js" strategy="lazyOnload"></Script>
-
-      {/* chat box container | 对话框容器 */}
+      {/* chat box container */}
       <Box ref={ChatBoxRef} flex={'1 0 0'} h={0} w={'100%'} overflow={'overlay'} px={[4, 0]} pb={3}>
         <Box id="chat-container" maxW={['100%', '92%']} h={'100%'} mx={'auto'}>
-          {/* 是否展示空试图 */}
           {showEmpty && <Empty />}
-
-          {/* 欢迎文案 */}
-          {!!welcomeText && (
-            <Box py={3}>
-              {/* avatar */}
-              <ChatAvatar src={appAvatar} type={'AI'} />
-              {/* message */}
-              <Box textAlign={'left'}>
-                <Card order={2} mt={2} {...MessageCardStyle} bg={'white'}>
-                  <Markdown source={`~~~guide \n${welcomeText}`} isChatting={false} />
-                </Card>
-              </Box>
-            </Box>
-          )}
-
+          {!!welcomeText && <WelcomeText appAvatar={appAvatar} welcomeText={welcomeText} />}
           {/* variable input */}
           {!!variableModules?.length && (
-            <Box py={3}>
-              {/* avatar */}
-              <ChatAvatar src={appAvatar} type={'AI'} />
-              {/* message */}
-              <Box textAlign={'left'}>
-                <Card order={2} mt={2} bg={'white'} w={'400px'} {...MessageCardStyle}>
-                  {variableModules.map((item) => (
-                    <Box key={item.id} mb={4}>
-                      <VariableLabel required={item.required}>{item.label}</VariableLabel>
-                      {item.type === VariableInputEnum.input && (
-                        <Input
-                          isDisabled={variableIsFinish}
-                          bg={'myWhite.400'}
-                          {...register(item.key, {
-                            required: item.required
-                          })}
-                        />
-                      )}
-                      {item.type === VariableInputEnum.textarea && (
-                        <Textarea
-                          isDisabled={variableIsFinish}
-                          bg={'myWhite.400'}
-                          {...register(item.key, {
-                            required: item.required
-                          })}
-                          rows={5}
-                          maxLength={4000}
-                        />
-                      )}
-                      {item.type === VariableInputEnum.select && (
-                        <MySelect
-                          width={'100%'}
-                          isDisabled={variableIsFinish}
-                          list={(item.enums || []).map((item) => ({
-                            label: item.value,
-                            value: item.value
-                          }))}
-                          {...register(item.key, {
-                            required: item.required
-                          })}
-                          value={getValues(item.key)}
-                          onchange={(e) => {
-                            setValue(item.key, e);
-                            setRefresh(!refresh);
-                          }}
-                        />
-                      )}
-                    </Box>
-                  ))}
-                  {!variableIsFinish && (
-                    <Button
-                      leftIcon={<MyIcon name={'core/chat/chatFill'} w={'16px'} />}
-                      size={'sm'}
-                      maxW={'100px'}
-                      onClick={handleSubmit((data) => {
-                        onUpdateVariable?.(data);
-                        setVariables(data);
-                        setVariableInputFinish(true);
-                      })}
-                    >
-                      {t('core.chat.Start Chat')}
-                    </Button>
-                  )}
-                </Card>
-              </Box>
-            </Box>
+            <VariableInput
+              appAvatar={appAvatar}
+              variableModules={variableModules}
+              variableIsFinish={variableIsFinish}
+              chatForm={chatForm}
+              onSubmitVariables={onSubmitVariables}
+            />
           )}
-
-          {/* chat history | 对话记录列表 */}
+          {/* chat history */}
           <Box id={'history'}>
             {chatHistory.map((item, index) => (
               <Box key={item.dataId} py={5}>
-                {/* 人类发言 */}
                 {item.obj === 'Human' && (
                   <>
-                    {/* control icon | 控制图标 */}
+                    {/* control icon */}
                     <Flex w={'100%'} alignItems={'center'} justifyContent={'flex-end'}>
-                      <ChatController
+                      <ChatControllerComponent
                         chat={item}
                         onDelete={
                           onDelMessage
                             ? () => {
-                                delOneMessage({ dataId: item.dataId, index });
-                              }
+                              delOneMessage({ dataId: item.dataId, index });
+                            }
                             : undefined
                         }
                         onRetry={() => retryInput(index)}
                       />
                       <ChatAvatar src={userAvatar} type={'Human'} />
                     </Flex>
-                    {/* content | 对话内容 */}
+                    {/* content */}
                     <Box mt={['6px', 2]} textAlign={'right'}>
                       <Card
                         className="markdown"
                         {...MessageCardStyle}
-                        color="white"
-                        bg={'primary.humanGradient'}
+                        bg={'primary.200'}
                         borderRadius={'8px 0 8px 8px'}
                         textAlign={'left'}
                       >
@@ -700,14 +640,12 @@ const ChatBox = (
                     </Box>
                   </>
                 )}
-
-                {/* AI发言 */}
                 {item.obj === 'AI' && (
                   <>
-                    {/* control icon */}
                     <Flex w={'100%'} alignItems={'center'}>
                       <ChatAvatar src={appAvatar} type={'AI'} />
-                      <ChatController
+                      {/* control icon */}
+                      <ChatControllerComponent
                         ml={2}
                         chat={item}
                         setChatHistory={setChatHistory}
@@ -717,81 +655,80 @@ const ChatBox = (
                         onDelete={
                           onDelMessage
                             ? () => {
-                                delOneMessage({ dataId: item.dataId, index });
-                              }
+                              delOneMessage({ dataId: item.dataId, index });
+                            }
                             : undefined
                         }
                         onMark={
                           showMarkIcon
                             ? () => {
-                                if (!item.dataId) return;
-                                if (item.adminFeedback) {
-                                  setAdminMarkData({
-                                    chatItemId: item.dataId,
-                                    datasetId: item.adminFeedback.datasetId,
-                                    collectionId: item.adminFeedback.collectionId,
-                                    dataId: item.adminFeedback.dataId,
-                                    q: item.adminFeedback.q || chatHistory[index - 1]?.value || '',
-                                    a: item.adminFeedback.a
-                                  });
-                                } else {
-                                  setAdminMarkData({
-                                    chatItemId: item.dataId,
-                                    q: chatHistory[index - 1]?.value || '',
-                                    a: item.value
-                                  });
-                                }
+                              if (!item.dataId) return;
+                              if (item.adminFeedback) {
+                                setAdminMarkData({
+                                  chatItemId: item.dataId,
+                                  datasetId: item.adminFeedback.datasetId,
+                                  collectionId: item.adminFeedback.collectionId,
+                                  dataId: item.adminFeedback.dataId,
+                                  q: item.adminFeedback.q || chatHistory[index - 1]?.value || '',
+                                  a: item.adminFeedback.a
+                                });
+                              } else {
+                                setAdminMarkData({
+                                  chatItemId: item.dataId,
+                                  q: chatHistory[index - 1]?.value || '',
+                                  a: item.value
+                                });
                               }
+                            }
                             : undefined
                         }
-                        onAddUserLike={(() => {
-                          if (feedbackType !== FeedbackTypeEnum.user || item.userBadFeedback) {
-                            return;
-                          }
-                          return () => {
-                            if (!item.dataId || !chatId || !appId) return;
+                        onAddUserLike={
+                          feedbackType !== FeedbackTypeEnum.user || item.userBadFeedback
+                            ? undefined
+                            : () => {
+                              if (!item.dataId || !chatId || !appId) return;
 
-                            const isGoodFeedback = !!item.userGoodFeedback;
-                            setChatHistory((state) =>
-                              state.map((chatItem) =>
-                                chatItem.dataId === item.dataId
-                                  ? {
+                              const isGoodFeedback = !!item.userGoodFeedback;
+                              setChatHistory((state) =>
+                                state.map((chatItem) =>
+                                  chatItem.dataId === item.dataId
+                                    ? {
                                       ...chatItem,
                                       userGoodFeedback: isGoodFeedback ? undefined : 'yes'
                                     }
-                                  : chatItem
-                              )
-                            );
-                            try {
-                              updateChatUserFeedback({
-                                appId,
-                                chatId,
-                                chatItemId: item.dataId,
-                                shareId,
-                                outLinkUid,
-                                userGoodFeedback: isGoodFeedback ? undefined : 'yes'
-                              });
-                            } catch (error) {}
-                          };
-                        })()}
-                        onCloseUserLike={
-                          feedbackType === FeedbackTypeEnum.admin
-                            ? () => {
-                                if (!item.dataId || !chatId || !appId) return;
-                                setChatHistory((state) =>
-                                  state.map((chatItem) =>
-                                    chatItem.dataId === item.dataId
-                                      ? { ...chatItem, userGoodFeedback: undefined }
-                                      : chatItem
-                                  )
-                                );
+                                    : chatItem
+                                )
+                              );
+                              try {
                                 updateChatUserFeedback({
                                   appId,
                                   chatId,
                                   chatItemId: item.dataId,
-                                  userGoodFeedback: undefined
+                                  shareId,
+                                  outLinkUid,
+                                  userGoodFeedback: isGoodFeedback ? undefined : 'yes'
                                 });
-                              }
+                              } catch (error) { }
+                            }
+                        }
+                        onCloseUserLike={
+                          feedbackType === FeedbackTypeEnum.admin
+                            ? () => {
+                              if (!item.dataId || !chatId || !appId) return;
+                              setChatHistory((state) =>
+                                state.map((chatItem) =>
+                                  chatItem.dataId === item.dataId
+                                    ? { ...chatItem, userGoodFeedback: undefined }
+                                    : chatItem
+                                )
+                              );
+                              updateChatUserFeedback({
+                                appId,
+                                chatId,
+                                chatItemId: item.dataId,
+                                userGoodFeedback: undefined
+                              });
+                            }
                             : undefined
                         }
                         onAddUserDislike={(() => {
@@ -816,7 +753,7 @@ const ChatBox = (
                                   shareId,
                                   outLinkUid
                                 });
-                              } catch (error) {}
+                              } catch (error) { }
                             };
                           } else {
                             return () => setFeedbackId(item.dataId);
@@ -825,12 +762,12 @@ const ChatBox = (
                         onReadUserDislike={
                           feedbackType === FeedbackTypeEnum.admin
                             ? () => {
-                                if (!item.dataId) return;
-                                setReadFeedbackData({
-                                  chatItemId: item.dataId || '',
-                                  content: item.userBadFeedback || ''
-                                });
-                              }
+                              if (!item.dataId) return;
+                              setReadFeedbackData({
+                                chatItemId: item.dataId || '',
+                                content: item.userBadFeedback || ''
+                              });
+                            }
                             : undefined
                         }
                       />
@@ -858,7 +795,7 @@ const ChatBox = (
                         </Flex>
                       )}
                     </Flex>
-                    {/* content | 对话内容 */}
+                    {/* content */}
                     <Box textAlign={'left'} mt={['6px', 2]}>
                       <Card bg={'white'} {...MessageCardStyle}>
                         <Markdown
@@ -875,9 +812,8 @@ const ChatBox = (
                               !isChatting &&
                               questionGuides.length > 0
                             ) {
-                              return `${replaceText}\n\`\`\`${
-                                CodeClassName.questionGuide
-                              }\n${JSON.stringify(questionGuides)}`;
+                              return `${replaceText}\n\`\`\`${CodeClassName.questionGuide
+                                }\n${JSON.stringify(questionGuides)}`;
                             }
                             return replaceText;
                           })()}
@@ -910,11 +846,11 @@ const ChatBox = (
                                           state.map((chatItem) =>
                                             chatItem.dataId === item.dataId
                                               ? {
-                                                  ...chatItem,
-                                                  customFeedbacks: chatItem.customFeedbacks?.filter(
-                                                    (item, index) => index !== i
-                                                  )
-                                                }
+                                                ...chatItem,
+                                                customFeedbacks: chatItem.customFeedbacks?.filter(
+                                                  (item, index) => index !== i
+                                                )
+                                              }
                                               : chatItem
                                           )
                                         );
@@ -951,14 +887,13 @@ const ChatBox = (
           </Box>
         </Box>
       </Box>
-      {/* message input | 对话输入框组件 */}
-      {onStartChat && variableIsFinish && active ? (
+      {/* message input */}
+      {onStartChat && variableIsFinish && active && (
         <MessageInput
-          onChange={(e) => {
-            setRefresh(!refresh);
-          }}
-          onSendMessage={(e) => {
-            handleSubmit((data) => sendPrompt(data, e))();
+          onSendMessage={(inputVal) => {
+            sendPrompt({
+              inputVal
+            });
           }}
           onStop={() => chatController.current?.abort('stop')}
           isChatting={isChatting}
@@ -966,7 +901,7 @@ const ChatBox = (
           resetInputVal={resetInputVal}
           showFileSelector={showFileSelector}
         />
-      ) : null}
+      )}
       {/* user feedback modal */}
       {!!feedbackId && chatId && appId && (
         <FeedbackModal
@@ -1006,7 +941,7 @@ const ChatBox = (
                 chatId,
                 chatItemId: readFeedbackData.chatItemId
               });
-            } catch (error) {}
+            } catch (error) { }
             setReadFeedbackData(undefined);
           }}
         />
@@ -1032,9 +967,9 @@ const ChatBox = (
               state.map((chatItem) =>
                 chatItem.dataId === adminMarkData.chatItemId
                   ? {
-                      ...chatItem,
-                      adminFeedback
-                    }
+                    ...chatItem,
+                    adminFeedback
+                  }
                   : chatItem
               )
             );
@@ -1062,10 +997,8 @@ const ChatBox = (
   );
 };
 
-// 导出对话组件
 export default React.memo(forwardRef(ChatBox));
 
-// 自定义Hook：useChatBox - 导出对话记录到文件
 export const useChatBox = () => {
   const onExportChat = useCallback(
     ({ type, history }: { type: ExportChatType; history: ChatItemType[] }) => {
@@ -1138,53 +1071,142 @@ export const useChatBox = () => {
   };
 };
 
-// 组件：？
-function VariableLabel({
-  required = false,
-  children
+const WelcomeText = React.memo(function Welcome({
+  appAvatar,
+  welcomeText
 }: {
-  required?: boolean;
-  children: React.ReactNode | string;
+  appAvatar?: string;
+  welcomeText: string;
 }) {
   return (
-    <Box as={'label'} display={'inline-block'} position={'relative'} mb={1}>
-      {children}
-      {required && (
-        <Box
-          position={'absolute'}
-          top={'-2px'}
-          right={'-10px'}
-          color={'red.500'}
-          fontWeight={'bold'}
-        >
-          *
-        </Box>
-      )}
+    <Box py={3}>
+      {/* avatar */}
+      <ChatAvatar src={appAvatar} type={'AI'} />
+      {/* message */}
+      <Box textAlign={'left'}>
+        <Card order={2} mt={2} {...MessageCardStyle} bg={'white'}>
+          <Markdown source={`~~~guide \n${welcomeText}`} isChatting={false} />
+        </Card>
+      </Box>
     </Box>
   );
-}
+});
+const VariableInput = React.memo(function VariableInput({
+  appAvatar,
+  variableModules,
+  variableIsFinish,
+  chatForm,
+  onSubmitVariables
+}: {
+  appAvatar?: string;
+  variableModules: VariableItemType[];
+  variableIsFinish: boolean;
+  onSubmitVariables: (e: Record<string, any>) => void;
+  chatForm: UseFormReturn<{
+    variables: Record<string, any>;
+  }>;
+}) {
+  const { t } = useTranslation();
+  const { register, setValue, handleSubmit: handleSubmitChat, watch } = chatForm;
+  const variables = watch('variables');
 
-// 组件：头像组件
+  return (
+    <Box py={3}>
+      {/* avatar */}
+      <ChatAvatar src={appAvatar} type={'AI'} />
+      {/* message */}
+      <Box textAlign={'left'}>
+        <Card order={2} mt={2} bg={'white'} w={'400px'} {...MessageCardStyle}>
+          {variableModules.map((item) => (
+            <Box key={item.id} mb={4}>
+              <Box as={'label'} display={'inline-block'} position={'relative'} mb={1}>
+                {item.label}
+                {item.required && (
+                  <Box
+                    position={'absolute'}
+                    top={'-2px'}
+                    right={'-10px'}
+                    color={'red.500'}
+                    fontWeight={'bold'}
+                  >
+                    *
+                  </Box>
+                )}
+              </Box>
+              {item.type === VariableInputEnum.input && (
+                <Input
+                  isDisabled={variableIsFinish}
+                  bg={'myWhite.400'}
+                  {...register(`variables.${item.key}`, {
+                    required: item.required
+                  })}
+                />
+              )}
+              {item.type === VariableInputEnum.textarea && (
+                <Textarea
+                  isDisabled={variableIsFinish}
+                  bg={'myWhite.400'}
+                  {...register(`variables.${item.key}`, {
+                    required: item.required
+                  })}
+                  rows={5}
+                  maxLength={4000}
+                />
+              )}
+              {item.type === VariableInputEnum.select && (
+                <MySelect
+                  width={'100%'}
+                  isDisabled={variableIsFinish}
+                  list={(item.enums || []).map((item) => ({
+                    label: item.value,
+                    value: item.value
+                  }))}
+                  {...register(`variables.${item.key}`, {
+                    required: item.required
+                  })}
+                  value={variables[item.key]}
+                  onchange={(e) => {
+                    setValue(`variables.${item.key}`, e);
+                  }}
+                />
+              )}
+            </Box>
+          ))}
+          {!variableIsFinish && (
+            <Button
+              leftIcon={<MyIcon name={'core/chat/chatFill'} w={'16px'} />}
+              size={'sm'}
+              maxW={'100px'}
+              onClick={handleSubmitChat((data) => {
+                onSubmitVariables(data);
+              })}
+            >
+              {t('core.chat.Start Chat')}
+            </Button>
+          )}
+        </Card>
+      </Box>
+    </Box>
+  );
+});
+
 function ChatAvatar({ src, type }: { src?: string; type: 'Human' | 'AI' }) {
-  // console.log("ChatAvatar src", src);
-
   const theme = useTheme();
   return (
     <Box
-      w={['36px', '36px']}
-      h={['36px', '36px']}
-      p={'0px'}
-      borderRadius={'50%'}
+      w={['28px', '34px']}
+      h={['28px', '34px']}
+      p={'2px'}
+      borderRadius={'sm'}
       border={theme.borders.base}
-      boxShadow={'0 0 4px rgb(212,212,212)'}
+      boxShadow={'0 0 5px rgba(0,0,0,0.1)'}
       bg={type === 'Human' ? 'white' : 'primary.50'}
     >
-      <Avatar src={src} w={'100%'} h={'100%'} borderRadius={'50%'} />
+      <Avatar src={src} w={'100%'} h={'100%'} />
     </Box>
   );
 }
 
-// 组件：Empty空试图
 function Empty() {
   const { data: chatProblem } = useMarkdown({ url: '/chatProblem.md' });
   const { data: versionIntro } = useMarkdown({ url: '/versionIntro.md' });
@@ -1202,8 +1224,7 @@ function Empty() {
   );
 }
 
-// 组件：对话记录 - 单条记录操作：复制、删除、朗读、反馈（满意、不满意）、重新询问
-function ChatController({
+const ChatControllerComponent = React.memo(function ChatControllerComponent({
   chat,
   setChatHistory,
   display,
@@ -1238,7 +1259,7 @@ function ChatController({
     ttsConfig
   });
   const controlIconStyle = {
-    w: '16px',
+    w: '14px',
     cursor: 'pointer',
     p: 1,
     bg: 'white',
@@ -1256,7 +1277,7 @@ function ChatController({
 
   return (
     <Flex {...controlContainerStyle} ml={ml} mr={mr} display={display}>
-      <MyTooltip label={'复制'}>
+      <MyTooltip label={t('common.Copy')}>
         <MyIcon
           {...controlIconStyle}
           name={'copy'}
@@ -1276,7 +1297,7 @@ function ChatController({
               />
             </MyTooltip>
           )}
-          <MyTooltip label={'删除'}>
+          <MyTooltip label={t('common.Delete')}>
             <MyIcon
               {...controlIconStyle}
               name={'delete'}
@@ -1289,7 +1310,7 @@ function ChatController({
       {showVoiceIcon &&
         hasAudio &&
         (audioLoading ? (
-          <MyTooltip label={'加载中...'}>
+          <MyTooltip label={t('common.Loading')}>
             <MyIcon {...controlIconStyle} name={'common/loading'} />
           </MyTooltip>
         ) : audioPlaying ? (
@@ -1323,9 +1344,9 @@ function ChatController({
                   state.map((item) =>
                     item.dataId === chat.dataId
                       ? {
-                          ...item,
-                          ttsBuffer: response.buffer
-                        }
+                        ...item,
+                        ttsBuffer: response.buffer
+                      }
                       : item
                   )
                 );
@@ -1372,13 +1393,13 @@ function ChatController({
           {...controlIconStyle}
           {...(!!chat.userGoodFeedback
             ? {
-                color: 'white',
-                bg: 'green.500',
-                fontWeight: 'bold'
-              }
+              color: 'white',
+              bg: 'green.500',
+              fontWeight: 'bold'
+            }
             : {
-                _hover: { color: 'green.600' }
-              })}
+              _hover: { color: 'green.600' }
+            })}
           name={'core/chat/feedback/goodLight'}
           onClick={onAddUserLike}
         />
@@ -1388,18 +1409,18 @@ function ChatController({
           {...controlIconStyle}
           {...(!!chat.userBadFeedback
             ? {
-                color: 'white',
-                bg: '#FC9663',
-                fontWeight: 'bold',
-                onClick: onAddUserDislike
-              }
+              color: 'white',
+              bg: '#FC9663',
+              fontWeight: 'bold',
+              onClick: onAddUserDislike
+            }
             : {
-                _hover: { color: '#FB7C3C' },
-                onClick: onAddUserDislike
-              })}
+              _hover: { color: '#FB7C3C' },
+              onClick: onAddUserDislike
+            })}
           name={'core/chat/feedback/badLight'}
         />
       )}
     </Flex>
   );
-}
+});

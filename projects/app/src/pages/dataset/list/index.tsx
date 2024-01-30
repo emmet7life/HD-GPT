@@ -29,10 +29,11 @@ import MyIcon from '@fastgpt/web/components/common/Icon';
 import { serviceSideProps } from '@/web/common/utils/i18n';
 import dynamic from 'next/dynamic';
 import {
-  FolderAvatarSrc,
   DatasetTypeEnum,
-  DatasetTypeMap
-} from '@fastgpt/global/core/dataset/constant';
+  DatasetTypeMap,
+  FolderIcon,
+  FolderImgUrl
+} from '@fastgpt/global/core/dataset/constants';
 import MyMenu from '@/components/MyMenu';
 import { useRequest } from '@/web/common/hooks/useRequest';
 import { useSystemStore } from '@/web/common/system/useSystemStore';
@@ -45,13 +46,15 @@ import { PermissionTypeEnum } from '@fastgpt/global/support/permission/constant'
 import { DatasetItemType } from '@fastgpt/global/core/dataset/type';
 import ParentPaths from '@/components/common/ParentPaths';
 import DatasetTypeTag from '@/components/core/dataset/DatasetTypeTag';
+import { useToast } from '@/web/common/hooks/useToast';
+import { getErrText } from '@fastgpt/global/common/error/utils';
 
 const CreateModal = dynamic(() => import('./component/CreateModal'), { ssr: false });
 const MoveModal = dynamic(() => import('./component/MoveModal'), { ssr: false });
 
 const Kb = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const { toast } = useToast();
   const router = useRouter();
   const { parentId } = router.query as { parentId: string };
   const { setLoading } = useSystemStore();
@@ -114,9 +117,20 @@ const Kb = () => {
     errorToast: t('dataset.Export Dataset Limit Error')
   });
 
-  const { data, refetch, isFetching } = useQuery(['loadDataset', parentId], () => {
-    return Promise.all([loadDatasets(parentId), getDatasetPaths(parentId)]);
-  });
+  const { data, refetch, isFetching } = useQuery(
+    ['loadDataset', parentId],
+    () => {
+      return Promise.all([loadDatasets(parentId), getDatasetPaths(parentId)]);
+    },
+    {
+      onError(err) {
+        toast({
+          status: 'error',
+          title: t(getErrText(err))
+        });
+      }
+    }
+  );
 
   const paths = data?.[1] || [];
 
@@ -167,7 +181,7 @@ const Kb = () => {
                 <MenuButton h={'100%'}>
                   <Flex alignItems={'center'} px={'20px'}>
                     <AddIcon mr={2} />
-                    <Box>{t('Create New')}</Box>
+                    <Box>{t('common.Create New')}</Box>
                   </Flex>
                 </MenuButton>
               </Button>
@@ -176,7 +190,7 @@ const Kb = () => {
               {
                 child: (
                   <Flex>
-                    <Image src={FolderAvatarSrc} alt={''} w={'20px'} mr={1} />
+                    <MyIcon name={FolderIcon} w={'20px'} mr={1} />
                     {t('Folder')}
                   </Flex>
                 ),
@@ -404,7 +418,10 @@ const Kb = () => {
               fontSize={'sm'}
               color={'myGray.500'}
             >
-              {dataset.intro || t('core.dataset.Intro Placeholder')}
+              {dataset.intro ||
+                (dataset.type === DatasetTypeEnum.folder
+                  ? t('core.dataset.Folder placeholder')
+                  : t('core.dataset.Intro Placeholder'))}
             </Box>
             <Flex alignItems={'center'} fontSize={'sm'}>
               <Box flex={1}>
@@ -437,7 +454,7 @@ const Kb = () => {
                 parentId,
                 name,
                 type: DatasetTypeEnum.folder,
-                avatar: FolderAvatarSrc,
+                avatar: FolderImgUrl,
                 intro: ''
               });
               refetch();
