@@ -83,23 +83,23 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
   const oAuthList = [
     ...(feConfigs?.oauth?.github
       ? [
-          {
-            label: t('support.user.login.Github'),
-            provider: OAuthEnum.github,
-            icon: 'common/gitFill',
-            redirectUrl: `https://github.com/login/oauth/authorize?client_id=${feConfigs?.oauth?.github}&redirect_uri=${redirectUri}&state=${state.current}&scope=user:email%20read:user`
-          }
-        ]
+        {
+          label: t('support.user.login.Github'),
+          provider: OAuthEnum.github,
+          icon: 'common/gitFill',
+          redirectUrl: `https://github.com/login/oauth/authorize?client_id=${feConfigs?.oauth?.github}&redirect_uri=${redirectUri}&state=${state.current}&scope=user:email%20read:user`
+        }
+      ]
       : []),
     ...(feConfigs?.oauth?.google
       ? [
-          {
-            label: t('support.user.login.Google'),
-            provider: OAuthEnum.google,
-            icon: 'common/googleFill',
-            redirectUrl: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${feConfigs?.oauth?.google}&redirect_uri=${redirectUri}&state=${state.current}&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email%20openid&include_granted_scopes=true`
-          }
-        ]
+        {
+          label: t('support.user.login.Google'),
+          provider: OAuthEnum.google,
+          icon: 'common/googleFill',
+          redirectUrl: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${feConfigs?.oauth?.google}&redirect_uri=${redirectUri}&state=${state.current}&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email%20openid&include_granted_scopes=true`
+        }
+      ]
       : [])
   ];
 
@@ -111,14 +111,15 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
         <Flex
           w={['48px', '56px']}
           h={['48px', '56px']}
-          bg={'myGray.25'}
+          bg={'white'}
           borderRadius={'xl'}
           borderWidth={'1.5px'}
           borderColor={'borderColor.base'}
           alignItems={'center'}
           justifyContent={'center'}
+          overflow={'hidden'}
         >
-          <Avatar src={LOGO_ICON} w={'30px'} />
+          <Avatar src={LOGO_ICON} w={'90%'} />
         </Flex>
         <Box ml={3} fontSize={['2xl', '3xl']} fontWeight={'bold'}>
           {feConfigs?.systemTitle}
@@ -155,7 +156,7 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
             })}
           ></Input>
         </FormControl>
-        {feConfigs?.docUrl && (
+        {/* {feConfigs?.docUrl && (
           <Box mt={7} fontSize={'sm'}>
             使用即代表你同意我们的{' '}
             <Link
@@ -166,7 +167,7 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
               免责声明
             </Link>
           </Box>
-        )}
+        )} */}
 
         <Button
           type="submit"
@@ -174,6 +175,7 @@ const LoginForm = ({ setPageType, loginSuccess }: Props) => {
           w={'100%'}
           size={['md', 'lg']}
           colorScheme="blue"
+          backgroundColor="blue"
           isLoading={requesting}
           onClick={handleSubmit(onclickLogin)}
         >

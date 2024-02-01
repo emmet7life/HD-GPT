@@ -14,7 +14,7 @@ const unAuthPage: { [key: string]: boolean } = {
 };
 
 const Auth = ({ children }: { children: JSX.Element }) => {
-  console.log('Layout >> Auth组件 初始化', children);
+  // console.log('Layout >> Auth组件 初始化', children);
 
   const router = useRouter();
   const toast = useToast({
@@ -23,14 +23,14 @@ const Auth = ({ children }: { children: JSX.Element }) => {
     status: 'warning'
   });
   const { userInfo, initUserInfo } = useUserStore();
-  console.log('Layout >> Auth组件 初始化 >> userInfo', userInfo);
-  console.log('Layout >> Auth组件 初始化 >> router.pathname', router.pathname);
+  // console.log('Layout >> Auth组件 初始化 >> userInfo', userInfo);
+  // console.log('Layout >> Auth组件 初始化 >> router.pathname', router.pathname);
 
   useQuery(
     [router.pathname],
     () => {
-      console.log('Layout >> Auth组件 初始化 >> useQuery 执行 userInfo', userInfo);
-      console.log('Layout >> Auth组件 初始化 >> useQuery 执行 router.pathname', router.pathname);
+      // console.log('Layout >> Auth组件 初始化 >> useQuery 执行 userInfo', userInfo);
+      // console.log('Layout >> Auth组件 初始化 >> useQuery 执行 router.pathname', router.pathname);
       if (unAuthPage[router.pathname] === true || userInfo) {
         return null;
       } else {

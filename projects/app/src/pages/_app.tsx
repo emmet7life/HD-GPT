@@ -37,7 +37,7 @@ const queryClient = new QueryClient({
 
 // 整个项目的入口组件
 function App({ Component, pageProps }: AppProps) {
-  console.log('App >> Component', Component, ', pageProps', pageProps);
+  // console.log('App >> Component', Component, ', pageProps', pageProps);
 
   const router = useRouter();
   const { hiId } = router.query as { hiId?: string };

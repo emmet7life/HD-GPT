@@ -39,7 +39,7 @@ const phoneUnShowLayoutRoute: Record<string, boolean> = {
 };
 
 const Layout = ({ children }: { children: JSX.Element }) => {
-  console.log('Layout children', children);
+  // console.log('Layout children', children);
 
   const router = useRouter();
   const { colorMode, setColorMode } = useColorMode();
