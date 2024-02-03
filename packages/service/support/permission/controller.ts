@@ -114,9 +114,9 @@ export async function parseHeaderCert({
   const { cookie, token, apikey, rootkey, authorization } = (req.headers ||
     {}) as ReqHeaderAuthType;
 
-  console.log('parseRootKey cookie', cookie);
-  console.log('parseRootKey token', token);
-  console.log('parseRootKey apikey, rootkey, authorization', apikey, rootkey, authorization);
+  // console.log('parseRootKey cookie', cookie);
+  // console.log('parseRootKey token', token);
+  // console.log('parseRootKey apikey, rootkey, authorization', apikey, rootkey, authorization);
 
   const { uid, teamId, tmbId, appId, openApiKey, authType } = await (async () => {
     if (authApiKey && authorization) {

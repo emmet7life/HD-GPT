@@ -14,6 +14,7 @@ import { useSystemStore } from '@/web/common/system/useSystemStore';
 import { useEditTitle } from '@/web/common/hooks/useEditTitle';
 import { useRouter } from 'next/router';
 import Avatar from '@/components/Avatar';
+import { HUMAN_ICON, LOGO_ICON } from '@fastgpt/global/common/system/constants';
 import MyTooltip from '@/components/MyTooltip';
 import MyIcon from '@fastgpt/web/components/common/Icon';
 import { useTranslation } from 'next-i18next';
@@ -130,7 +131,7 @@ const ChatHistorySlider = ({
               })
             }
           >
-            <Avatar src={appAvatar} />
+            <Avatar src={appAvatar} placeholder={LOGO_ICON} />
             <Box flex={'1 0 0'} w={0} ml={2} fontWeight={'bold'} className={'textEllipsis'}>
               {appName}
             </Box>
@@ -156,7 +157,7 @@ const ChatHistorySlider = ({
           variant={'whitePrimary'}
           flex={1}
           h={'100%'}
-          color={'primary.600'}
+          color={'primary.main'}
           borderRadius={'xl'}
           leftIcon={<MyIcon name={'core/chat/chatLight'} w={'16px'} />}
           overflow={'hidden'}
@@ -205,7 +206,7 @@ const ChatHistorySlider = ({
                 {...(item.id === activeChatId
                   ? {
                       backgroundColor: 'primary.50 !important',
-                      color: 'primary.600'
+                      color: 'primary.main'
                     }
                   : {
                       onClick: () => {
@@ -310,7 +311,7 @@ const ChatHistorySlider = ({
                       }
                     })}
               >
-                <Avatar src={item.avatar} w={'24px'} />
+                <Avatar src={item.avatar} w={'24px'} placeholder={HUMAN_ICON} />
                 <Box ml={2} className={'textEllipsis'}>
                   {item.name}
                 </Box>
@@ -331,7 +332,7 @@ const ChatHistorySlider = ({
         >
           <IconButton
             mr={3}
-            icon={<MyIcon name={'common/backFill'} w={'18px'} color={'primary.500'} />}
+            icon={<MyIcon name={'common/backFill'} w={'18px'} color={'primary.main'} />}
             bg={'white'}
             boxShadow={'1px 1px 9px rgba(0,0,0,0.15)'}
             size={'smSquare'}

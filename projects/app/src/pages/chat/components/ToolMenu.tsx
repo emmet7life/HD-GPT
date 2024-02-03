@@ -6,7 +6,14 @@ import { useTranslation } from 'next-i18next';
 import MyIcon from '@fastgpt/web/components/common/Icon';
 import { useRouter } from 'next/router';
 
-const ToolMenu = ({ history }: { history: ChatItemType[] }) => {
+// isEnabled: 开启历史记录导出功能
+const ToolMenu = ({
+  history,
+  isEnabled = true
+}: {
+  history: ChatItemType[];
+  isEnabled?: boolean;
+}) => {
   const { t } = useTranslation();
   const { onExportChat } = useChatBox();
   const router = useRouter();
@@ -44,7 +51,7 @@ const ToolMenu = ({ history }: { history: ChatItemType[] }) => {
     [history, onExportChat, router]
   );
 
-  return history.length > 0 ? (
+  return !!isEnabled && history.length > 0 ? (
     <Menu autoSelect={false} isLazy>
       <MenuButton
         _hover={{ bg: 'myWhite.600  ' }}

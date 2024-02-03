@@ -9,6 +9,7 @@ import type { ChatItemType } from '@fastgpt/global/core/chat/type';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { chatContentReplaceBlock } from '@fastgpt/global/core/chat/utils';
+import { LOGO_ICON } from '@fastgpt/global/common/system/constants';
 
 const ChatHeader = ({
   history,
@@ -41,18 +42,20 @@ const ChatHeader = ({
 
   return (
     <Flex
-      alignItems={'center'}
-      px={[3, 5]}
-      h={['46px', '60px']}
+      alignItems={['flex-start', 'center']}
+      px={[4, 5]}
+      h={['28px', '60px']}
       borderBottom={theme.borders.sm}
+      overflow={'hidden'}
       color={'myGray.900'}
+      bg={'white'}
     >
       {isPc ? (
         <>
           <Box mr={3} color={'myGray.1000'}>
             {title}
           </Box>
-          <Tag>
+          <Tag colorSchema="main">
             <MyIcon name={'history'} w={'14px'} />
             <Box ml={1}>
               {history.length === 0
@@ -80,11 +83,20 @@ const ChatHeader = ({
             />
           )}
 
-          <Flex px={3} alignItems={'center'} flex={'1 0 0'} w={0} justifyContent={'center'}>
-            <Avatar src={appAvatar} w={'16px'} />
+          <Flex
+            bg="transparent"
+            px={3}
+            alignItems={'center'}
+            flex={'1 0 0'}
+            w={0}
+            justifyContent={'center'}
+          >
+            <Avatar src={appAvatar} w={'24px'} placeholder={LOGO_ICON} />
             <Box
               ml={1}
               className="textEllipsis"
+              fontWeight="bold"
+              fontSize="16px"
               onClick={() => {
                 appId && router.push(`/app/detail?appId=${appId}`);
               }}
@@ -95,7 +107,7 @@ const ChatHeader = ({
         </>
       )}
       {/* control */}
-      <ToolMenu history={history} />
+      <ToolMenu history={history} isEnabled={false} />
     </Flex>
   );
 };

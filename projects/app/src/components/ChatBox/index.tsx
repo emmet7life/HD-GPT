@@ -53,6 +53,7 @@ import type { AdminMarkType } from './SelectMarkCollection';
 
 import MyIcon from '@fastgpt/web/components/common/Icon';
 import Avatar from '@/components/Avatar';
+import { HUMAN_ICON, LOGO_ICON } from '@fastgpt/global/common/system/constants';
 import Markdown, { CodeClassName } from '@/components/Markdown';
 import MySelect from '@/components/Select';
 import MyTooltip from '../MyTooltip';
@@ -117,6 +118,7 @@ type Props = {
   userGuideModule?: ModuleItemType;
   showFileSelector?: boolean;
   active?: boolean; // can use
+  safeAreaBottom?: number;
 
   // not chat test params
   appId?: string;
@@ -148,6 +150,7 @@ const ChatBox = (
     chatId,
     shareId,
     outLinkUid,
+    safeAreaBottom = 0,
     onUpdateVariable,
     onStartChat,
     onDelMessage
@@ -624,7 +627,7 @@ const ChatBox = (
                         }
                         onRetry={() => retryInput(index)}
                       />
-                      <ChatAvatar src={userAvatar} type={'Human'} />
+                      <ChatAvatar src={userAvatar} type={'Human'} placeholder={HUMAN_ICON} />
                     </Flex>
                     {/* content */}
                     <Box mt={['6px', 2]} textAlign={'right'}>
@@ -644,7 +647,7 @@ const ChatBox = (
                 {item.obj === 'AI' && (
                   <>
                     <Flex w={'100%'} alignItems={'center'}>
-                      <ChatAvatar src={appAvatar} type={'AI'} />
+                      <ChatAvatar src={appAvatar} type={'AI'} placeholder={LOGO_ICON} />
                       {/* control icon */}
                       <ChatControllerComponent
                         ml={2}
@@ -902,6 +905,7 @@ const ChatBox = (
           TextareaDom={TextareaDom}
           resetInputVal={resetInputVal}
           showFileSelector={showFileSelector}
+          safeAreaBottom={safeAreaBottom}
         />
       )}
       {/* user feedback modal */}
@@ -1083,7 +1087,7 @@ const WelcomeText = React.memo(function Welcome({
   return (
     <Box py={3}>
       {/* avatar */}
-      <ChatAvatar src={appAvatar} type={'AI'} />
+      <ChatAvatar src={appAvatar} type={'AI'} placeholder={LOGO_ICON} />
       {/* message */}
       <Box textAlign={'left'}>
         <Card order={2} mt={2} {...MessageCardStyle} bg={'white'}>
@@ -1115,7 +1119,7 @@ const VariableInput = React.memo(function VariableInput({
   return (
     <Box py={3}>
       {/* avatar */}
-      <ChatAvatar src={appAvatar} type={'AI'} />
+      <ChatAvatar src={appAvatar} type={'AI'} placeholder={LOGO_ICON} />
       {/* message */}
       <Box textAlign={'left'}>
         <Card order={2} mt={2} bg={'white'} w={'400px'} {...MessageCardStyle}>
@@ -1192,19 +1196,33 @@ const VariableInput = React.memo(function VariableInput({
   );
 });
 
-function ChatAvatar({ src, type }: { src?: string; type: 'Human' | 'AI' }) {
+function ChatAvatar({
+  src,
+  type,
+  placeholder
+}: {
+  src?: string;
+  type: 'Human' | 'AI';
+  placeholder?: string;
+}) {
   const theme = useTheme();
   return (
     <Box
-      w={['36px', '34px']}
-      h={['36px', '34px']}
+      w={['2.58rem', '2.68rem']}
+      h={['2.58rem', '2.68rem']}
       p={'0px'}
       borderRadius={'50%'}
       border={theme.borders.base}
       boxShadow={'0 0 4px rgb(212,212,212)'}
       bg={type === 'Human' ? 'white' : 'primary.50'}
     >
-      <Avatar src={src} w={'100%'} h={'100%'} borderRadius={'50%'} />
+      <Avatar
+        src={src}
+        w={'100%'}
+        h={'100%'}
+        placeholder={placeholder ?? ''}
+        borderRadius={'50%'}
+      />
     </Box>
   );
 }
@@ -1361,7 +1379,7 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
           <MyIcon
             {...controlIconStyle}
             name={'core/app/markLight'}
-            _hover={{ color: '#67c13b' }}
+            _hover={{ color: 'primary.main' }}
             onClick={onMark}
           />
         </MyTooltip>
@@ -1371,7 +1389,7 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
           <MyIcon
             {...controlIconStyle}
             color={'white'}
-            bg={'green.500'}
+            bg={'primary.main'}
             fontWeight={'bold'}
             name={'core/chat/feedback/goodLight'}
             onClick={onCloseUserLike}
@@ -1383,7 +1401,7 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
           <MyIcon
             {...controlIconStyle}
             color={'white'}
-            bg={'#FC9663'}
+            bg={'primary.coral'}
             fontWeight={'bold'}
             name={'core/chat/feedback/badLight'}
             onClick={onReadUserDislike}
@@ -1396,11 +1414,11 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
           {...(!!chat.userGoodFeedback
             ? {
                 color: 'white',
-                bg: 'green.500',
+                bg: 'primary.main',
                 fontWeight: 'bold'
               }
             : {
-                _hover: { color: 'green.600' }
+                _hover: { color: 'primary.main' }
               })}
           name={'core/chat/feedback/goodLight'}
           onClick={onAddUserLike}
@@ -1412,12 +1430,12 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
           {...(!!chat.userBadFeedback
             ? {
                 color: 'white',
-                bg: '#FC9663',
+                bg: 'primary.coral',
                 fontWeight: 'bold',
                 onClick: onAddUserDislike
               }
             : {
-                _hover: { color: '#FB7C3C' },
+                _hover: { color: 'primary.coral' },
                 onClick: onAddUserDislike
               })}
           name={'core/chat/feedback/badLight'}

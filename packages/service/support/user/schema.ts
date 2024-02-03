@@ -32,7 +32,7 @@ const UserSchema = new Schema({
   },
   avatar: {
     type: String,
-    default: '/icon/human.svg'
+    default: '/icon/human.png'
   },
   balance: {
     type: Number,

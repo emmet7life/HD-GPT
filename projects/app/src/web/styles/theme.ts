@@ -401,7 +401,10 @@ export const theme = extendTheme({
       700: '#2B5FD9',
       800: '#2450B5',
       900: '#1D4091',
-      humanGradient: 'linear-gradient(to bottom right, #7960ff 0%, #a882fe 100%)'
+      humanGradient: 'linear-gradient(to bottom right, #7960ff 0%, #a882fe 100%)',
+
+      main: '#a882fe',
+      coral: '#FF7F50'
     },
     red: {
       1: 'rgba(217,45,32,0.1)',

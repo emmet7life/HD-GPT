@@ -35,7 +35,8 @@ const MessageInput = ({
   isChatting,
   TextareaDom,
   showFileSelector = false,
-  resetInputVal
+  resetInputVal,
+  safeAreaBottom = 0
 }: {
   onChange?: (e: string) => void;
   onSendMessage: (e: string) => void;
@@ -44,6 +45,7 @@ const MessageInput = ({
   showFileSelector?: boolean;
   TextareaDom: React.MutableRefObject<HTMLTextAreaElement | null>;
   resetInputVal: (val: string) => void;
+  safeAreaBottom?: number;
 }) => {
   const [, startSts] = useTransition();
 
@@ -60,7 +62,7 @@ const MessageInput = ({
   const { isPc } = useSystemStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { t } = useTranslation();
-  const textareaMinH = '22px';
+  const textareaMinH = 34;
   const [fileList, setFileList] = useState<FileItemType[]>([]);
   const havInput = !!TextareaDom.current?.value || fileList.length > 0;
 
@@ -184,13 +186,36 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
     renderCurve();
   }, [renderAudioGraph, stream]);
 
+  // console.log("safeAreaBottom", safeAreaBottom);
+
+  let _safeAreaBottom = safeAreaBottom;
+  if (!_safeAreaBottom) {
+    _safeAreaBottom = 3; // 保底的bottom内边距值
+  }
+
   return (
-    <Box m={['0 auto', '10px auto']} w={'100%'} maxW={['auto', 'min(800px, 100%)']} px={[0, 5]}>
+    <Box
+      m={['0px auto', '10px auto']}
+      {...(isPc
+        ? {}
+        : {
+            boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`,
+            bg: 'white'
+          })}
+      pb={[`${_safeAreaBottom || 0}px`, '0px']}
+      w={'100%'}
+      maxW={['auto', 'min(800px, 100%)']}
+      px={[0, 5]}
+    >
       <Box
+        {...(isPc
+          ? {
+              boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`
+            }
+          : {})}
         pt={fileList.length > 0 ? '10px' : ['14px', '18px']}
-        pb={['14px', '18px']}
+        pb={['6px', '18px']}
         position={'relative'}
-        boxShadow={isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`}
         borderRadius={['none', 'md']}
         bg={'white'}
         overflow={'hidden'}
@@ -284,11 +309,17 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
           ))}
         </Flex>
 
-        <Flex alignItems={'flex-end'} mt={fileList.length > 0 ? 1 : 0} pl={[2, 4]}>
+        <Flex
+          bg={'white'}
+          pb={['8px', '0px']}
+          alignItems={'flex-end'}
+          mt={fileList.length > 0 ? 1 : 0}
+          pl={[3, 4]}
+        >
           {/* file selector */}
           {showFileSelector && (
             <Flex
-              h={'22px'}
+              h={'34px'}
               alignItems={'center'}
               justifyContent={'center'}
               cursor={'pointer'}
@@ -310,19 +341,33 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
             ref={TextareaDom}
             py={0}
             pl={2}
-            pr={['30px', '48px']}
-            border={'none'}
-            _focusVisible={{
-              border: 'none'
-            }}
+            fontSize={'1rem'}
+            pr={['3px', '3px']}
+            {...(isPc
+              ? {
+                  border: 'none',
+                  _focusVisible: {
+                    border: 'none'
+                  }
+                }
+              : {
+                  border: '1px solid rgba(212, 212, 212, 1.0)',
+                  _focusVisible: {
+                    border: '1px solid #a882fe'
+                  }
+                })}
             placeholder={isSpeaking ? t('core.chat.Speaking') : t('core.chat.Type a message')}
             resize={'none'}
+            overflow={'hidden'}
+            borderRadius={'8px'}
             rows={1}
-            height={'22px'}
-            lineHeight={'22px'}
+            w={['calc(100% - 50px)', 'calc(100% - 55px)']}
+            h={'34px'}
+            minH={'34px'}
+            lineHeight={'34px'}
             maxHeight={'150px'}
             maxLength={-1}
-            overflowY={'auto'}
+            overflowY={'hidden'}
             whiteSpace={'pre-wrap'}
             wordBreak={'break-all'}
             boxShadow={'none !important'}
@@ -330,9 +375,8 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
             isDisabled={isSpeaking}
             onChange={(e) => {
               const textarea = e.target;
-              textarea.style.height = textareaMinH;
-              textarea.style.height = `${textarea.scrollHeight}px`;
-
+              textarea.style.height = `${textareaMinH}px`;
+              textarea.style.height = `${Math.max(textarea.scrollHeight, textareaMinH)}px`;
               startSts(() => {
                 onChange?.(textarea.value);
               });
@@ -342,8 +386,11 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
               const isEnter = e.keyCode === 13;
               if (isEnter && TextareaDom.current && (e.ctrlKey || e.altKey)) {
                 TextareaDom.current.value += '\n';
-                TextareaDom.current.style.height = textareaMinH;
-                TextareaDom.current.style.height = `${TextareaDom.current.scrollHeight}px`;
+                TextareaDom.current.style.height = `${textareaMinH}px`;
+                TextareaDom.current.style.height = `${Math.max(
+                  TextareaDom.current.scrollHeight,
+                  textareaMinH
+                )}px`;
                 return;
               }
 
@@ -370,8 +417,9 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
           <Flex
             alignItems={'center'}
             position={'absolute'}
-            right={[2, 4]}
-            bottom={['10px', '12px']}
+            right={[3, 4]}
+            bg={'transparent'}
+            bottom={['15px', '18px']}
           >
             {/* voice-input */}
             {!shareId && !havInput && !isChatting && (
@@ -386,7 +434,7 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
                   }}
                 />
                 <Flex
-                  mr={2}
+                  mr={'0px'}
                   alignItems={'center'}
                   justifyContent={'center'}
                   flexShrink={0}
@@ -420,13 +468,14 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
               </Box>
             ) : (
               <Flex
+                mr={'0px'}
                 alignItems={'center'}
                 justifyContent={'center'}
                 flexShrink={0}
-                h={['28px', '32px']}
-                w={['28px', '32px']}
+                h={['34px', '32px']}
+                w={['34px', '32px']}
                 borderRadius={'md'}
-                bg={isSpeaking || isChatting ? '' : !havInput ? '#E5E5E5' : '#a882fe'}
+                bg={isSpeaking || isChatting ? '' : !havInput ? '#E5E5E5' : 'primary.main'}
                 cursor={havInput ? 'pointer' : 'not-allowed'}
                 lineHeight={1}
                 onClick={() => {

@@ -27,6 +27,7 @@ import { chatContentReplaceBlock } from '@fastgpt/global/core/chat/utils';
 import { useChatStore } from '@/web/core/chat/storeChat';
 import { ChatStatusEnum } from '@fastgpt/global/core/chat/constants';
 import MyBox from '@/components/common/MyBox';
+import { useSearchParams, useParams, usePathname } from 'next/navigation';
 
 const OutLink = ({
   shareId,
@@ -48,6 +49,19 @@ const OutLink = ({
   const forbidRefresh = useRef(false);
   const initSign = useRef(false);
   const [isEmbed, setIdEmbed] = useState(true);
+  const searchParams = useSearchParams();
+  const params = new URLSearchParams(searchParams);
+  const avatarUrl = params.get('avatarUrl');
+  let safeAreaBottom = 0;
+  if (params.get('safeAreaBottom')) {
+    try {
+      safeAreaBottom = Number(params.get('safeAreaBottom'));
+    } catch (error) {}
+  }
+  console.log('OutLink >> searchParams', searchParams);
+  console.log('OutLink >> params', params);
+  console.log('OutLink >> params get avatarUrl', avatarUrl);
+  console.log('OutLink >> params get safeAreaBottom', safeAreaBottom);
 
   const {
     localUId,
@@ -271,7 +285,7 @@ const OutLink = ({
         h={'100%'}
         display={'flex'}
         flexDirection={['column', 'row']}
-        bg={'white'}
+        bg={'transparent'}
       >
         {showHistory === '1'
           ? ((children: React.ReactNode) => {
@@ -285,7 +299,7 @@ const OutLink = ({
                   size={'xs'}
                   onClose={onCloseSlider}
                 >
-                  <DrawerOverlay backgroundColor={'rgba(255,255,255,0.5)'} />
+                  <DrawerOverlay backgroundColor={'rgba(0,0,0,0.3)'} />
                   <DrawerContent maxWidth={'250px'} boxShadow={'2px 0 10px rgba(0,0,0,0.15)'}>
                     {children}
                   </DrawerContent>
@@ -370,7 +384,8 @@ const OutLink = ({
               active={!!chatData.app.name}
               ref={ChatBoxRef}
               appAvatar={chatData.app.avatar}
-              userAvatar={chatData.userAvatar}
+              userAvatar={avatarUrl || ''}
+              safeAreaBottom={safeAreaBottom}
               userGuideModule={chatData.app?.userGuideModule}
               showFileSelector={checkChatSupportSelectFileByChatModels(chatData.app.chatModels)}
               feedbackType={'user'}
