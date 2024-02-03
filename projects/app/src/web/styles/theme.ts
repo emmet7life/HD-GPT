@@ -183,7 +183,24 @@ const Button = defineStyleConfig({
       _disabled: {
         bg: 'myGray.50'
       }
-    }
+    },
+    primaryMain: {
+      color: 'primary.main',
+      border: '1px solid',
+      borderColor: 'primary.main',
+      bg: 'white',
+      transition: 'background 0.1s',
+      boxShadow: '1',
+      _hover: {
+        bg: 'white'
+      },
+      _active: {
+        color: 'primary.main'
+      },
+      _disabled: {
+        bg: 'white !important'
+      }
+    },
   },
   defaultProps: {
     size: 'md',

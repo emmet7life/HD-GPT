@@ -28,7 +28,8 @@ import {
   FlexProps,
   Image,
   Textarea,
-  Checkbox
+  Checkbox,
+  HStack
 } from '@chakra-ui/react';
 import { feConfigs } from '@/web/common/system/staticData';
 import { EventNameEnum, eventBus } from '@/web/common/utils/eventbus';
@@ -74,6 +75,11 @@ import ChatBoxDivider from '../core/chat/Divider';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 24);
 
 const textareaMinH = '22px';
+
+const chatBottomGuideItems: ChatBottomGuideItem[] = [
+  { title: "恒达微波简介", guideId: "1" },
+  { title: "联系方式", guideId: "2" },
+]
 
 type generatingMessageProps = { text?: string; name?: string; status?: 'running' | 'finish' };
 
@@ -246,14 +252,14 @@ const ChatBox = (
             ...item,
             ...(text
               ? {
-                  value: item.value + text
-                }
+                value: item.value + text
+              }
               : {}),
             ...(status && name
               ? {
-                  status,
-                  moduleName: name
-                }
+                status,
+                moduleName: name
+              }
               : {})
           };
         })
@@ -300,7 +306,7 @@ const ChatBox = (
             scrollToBottom();
           }, 100);
         }
-      } catch (error) {}
+      } catch (error) { }
     },
     [questionGuide, shareId]
   );
@@ -406,9 +412,9 @@ const ChatBox = (
               history: newChatList.map((item, i) =>
                 i === newChatList.length - 1
                   ? {
-                      ...item,
-                      value: responseText
-                    }
+                    ...item,
+                    value: responseText
+                  }
                   : item
               )
             });
@@ -474,7 +480,7 @@ const ChatBox = (
           inputVal: delHistory[0].value,
           history: chatHistory.slice(0, index)
         });
-      } catch (error) {}
+      } catch (error) { }
       setLoading(false);
     },
     [chatHistory, onDelMessage, sendPrompt, setLoading]
@@ -609,7 +615,7 @@ const ChatBox = (
             />
           )}
           {/* chat history */}
-          <Box id={'history'}>
+          <Box id={'history'} pb={"28px"}>
             {chatHistory.map((item, index) => (
               <Box key={item.dataId} py={5}>
                 {item.obj === 'Human' && (
@@ -621,8 +627,8 @@ const ChatBox = (
                         onDelete={
                           onDelMessage
                             ? () => {
-                                delOneMessage({ dataId: item.dataId, index });
-                              }
+                              delOneMessage({ dataId: item.dataId, index });
+                            }
                             : undefined
                         }
                         onRetry={() => retryInput(index)}
@@ -659,80 +665,80 @@ const ChatBox = (
                         onDelete={
                           onDelMessage
                             ? () => {
-                                delOneMessage({ dataId: item.dataId, index });
-                              }
+                              delOneMessage({ dataId: item.dataId, index });
+                            }
                             : undefined
                         }
                         onMark={
                           showMarkIcon
                             ? () => {
-                                if (!item.dataId) return;
-                                if (item.adminFeedback) {
-                                  setAdminMarkData({
-                                    chatItemId: item.dataId,
-                                    datasetId: item.adminFeedback.datasetId,
-                                    collectionId: item.adminFeedback.collectionId,
-                                    dataId: item.adminFeedback.dataId,
-                                    q: item.adminFeedback.q || chatHistory[index - 1]?.value || '',
-                                    a: item.adminFeedback.a
-                                  });
-                                } else {
-                                  setAdminMarkData({
-                                    chatItemId: item.dataId,
-                                    q: chatHistory[index - 1]?.value || '',
-                                    a: item.value
-                                  });
-                                }
+                              if (!item.dataId) return;
+                              if (item.adminFeedback) {
+                                setAdminMarkData({
+                                  chatItemId: item.dataId,
+                                  datasetId: item.adminFeedback.datasetId,
+                                  collectionId: item.adminFeedback.collectionId,
+                                  dataId: item.adminFeedback.dataId,
+                                  q: item.adminFeedback.q || chatHistory[index - 1]?.value || '',
+                                  a: item.adminFeedback.a
+                                });
+                              } else {
+                                setAdminMarkData({
+                                  chatItemId: item.dataId,
+                                  q: chatHistory[index - 1]?.value || '',
+                                  a: item.value
+                                });
                               }
+                            }
                             : undefined
                         }
                         onAddUserLike={
                           feedbackType !== FeedbackTypeEnum.user || item.userBadFeedback
                             ? undefined
                             : () => {
-                                if (!item.dataId || !chatId || !appId) return;
+                              if (!item.dataId || !chatId || !appId) return;
 
-                                const isGoodFeedback = !!item.userGoodFeedback;
-                                setChatHistory((state) =>
-                                  state.map((chatItem) =>
-                                    chatItem.dataId === item.dataId
-                                      ? {
-                                          ...chatItem,
-                                          userGoodFeedback: isGoodFeedback ? undefined : 'yes'
-                                        }
-                                      : chatItem
-                                  )
-                                );
-                                try {
-                                  updateChatUserFeedback({
-                                    appId,
-                                    chatId,
-                                    chatItemId: item.dataId,
-                                    shareId,
-                                    outLinkUid,
-                                    userGoodFeedback: isGoodFeedback ? undefined : 'yes'
-                                  });
-                                } catch (error) {}
-                              }
-                        }
-                        onCloseUserLike={
-                          feedbackType === FeedbackTypeEnum.admin
-                            ? () => {
-                                if (!item.dataId || !chatId || !appId) return;
-                                setChatHistory((state) =>
-                                  state.map((chatItem) =>
-                                    chatItem.dataId === item.dataId
-                                      ? { ...chatItem, userGoodFeedback: undefined }
-                                      : chatItem
-                                  )
-                                );
+                              const isGoodFeedback = !!item.userGoodFeedback;
+                              setChatHistory((state) =>
+                                state.map((chatItem) =>
+                                  chatItem.dataId === item.dataId
+                                    ? {
+                                      ...chatItem,
+                                      userGoodFeedback: isGoodFeedback ? undefined : 'yes'
+                                    }
+                                    : chatItem
+                                )
+                              );
+                              try {
                                 updateChatUserFeedback({
                                   appId,
                                   chatId,
                                   chatItemId: item.dataId,
-                                  userGoodFeedback: undefined
+                                  shareId,
+                                  outLinkUid,
+                                  userGoodFeedback: isGoodFeedback ? undefined : 'yes'
                                 });
-                              }
+                              } catch (error) { }
+                            }
+                        }
+                        onCloseUserLike={
+                          feedbackType === FeedbackTypeEnum.admin
+                            ? () => {
+                              if (!item.dataId || !chatId || !appId) return;
+                              setChatHistory((state) =>
+                                state.map((chatItem) =>
+                                  chatItem.dataId === item.dataId
+                                    ? { ...chatItem, userGoodFeedback: undefined }
+                                    : chatItem
+                                )
+                              );
+                              updateChatUserFeedback({
+                                appId,
+                                chatId,
+                                chatItemId: item.dataId,
+                                userGoodFeedback: undefined
+                              });
+                            }
                             : undefined
                         }
                         onAddUserDislike={(() => {
@@ -757,7 +763,7 @@ const ChatBox = (
                                   shareId,
                                   outLinkUid
                                 });
-                              } catch (error) {}
+                              } catch (error) { }
                             };
                           } else {
                             return () => setFeedbackId(item.dataId);
@@ -766,12 +772,12 @@ const ChatBox = (
                         onReadUserDislike={
                           feedbackType === FeedbackTypeEnum.admin
                             ? () => {
-                                if (!item.dataId) return;
-                                setReadFeedbackData({
-                                  chatItemId: item.dataId || '',
-                                  content: item.userBadFeedback || ''
-                                });
-                              }
+                              if (!item.dataId) return;
+                              setReadFeedbackData({
+                                chatItemId: item.dataId || '',
+                                content: item.userBadFeedback || ''
+                              });
+                            }
                             : undefined
                         }
                       />
@@ -816,9 +822,8 @@ const ChatBox = (
                               !isChatting &&
                               questionGuides.length > 0
                             ) {
-                              return `${replaceText}\n\`\`\`${
-                                CodeClassName.questionGuide
-                              }\n${JSON.stringify(questionGuides)}`;
+                              return `${replaceText}\n\`\`\`${CodeClassName.questionGuide
+                                }\n${JSON.stringify(questionGuides)}`;
                             }
                             return replaceText;
                           })()}
@@ -851,11 +856,11 @@ const ChatBox = (
                                           state.map((chatItem) =>
                                             chatItem.dataId === item.dataId
                                               ? {
-                                                  ...chatItem,
-                                                  customFeedbacks: chatItem.customFeedbacks?.filter(
-                                                    (item, index) => index !== i
-                                                  )
-                                                }
+                                                ...chatItem,
+                                                customFeedbacks: chatItem.customFeedbacks?.filter(
+                                                  (item, index) => index !== i
+                                                )
+                                              }
                                               : chatItem
                                           )
                                         );
@@ -891,6 +896,18 @@ const ChatBox = (
             ))}
           </Box>
         </Box>
+      </Box>
+      <Box h={'0px'}>
+        <ChatBottomGuideComponent
+          items={chatBottomGuideItems}
+          onClickGuideItem={(index) => {
+            if (index >= 0 && index < chatBottomGuideItems.length) {
+              const guideItem = chatBottomGuideItems[index];
+              sendPrompt({
+                inputVal: guideItem.title
+              });
+            }
+          }} />
       </Box>
       {/* message input */}
       {onStartChat && variableIsFinish && active && (
@@ -947,7 +964,7 @@ const ChatBox = (
                 chatId,
                 chatItemId: readFeedbackData.chatItemId
               });
-            } catch (error) {}
+            } catch (error) { }
             setReadFeedbackData(undefined);
           }}
         />
@@ -973,9 +990,9 @@ const ChatBox = (
               state.map((chatItem) =>
                 chatItem.dataId === adminMarkData.chatItemId
                   ? {
-                      ...chatItem,
-                      adminFeedback
-                    }
+                    ...chatItem,
+                    adminFeedback
+                  }
                   : chatItem
               )
             );
@@ -1244,6 +1261,46 @@ function Empty() {
   );
 }
 
+type ChatBottomGuideItem = {
+  title: string;
+  guideId: string;
+}
+const ChatBottomGuideComponent = React.memo(function ChatBottomGuideComponent(
+  { items, onClickGuideItem }:
+    { items: ChatBottomGuideItem[], onClickGuideItem?: (index: number) => void }) {
+  return (
+    <Box
+      overflowX="auto"
+      whiteSpace="nowrap"
+      pl={3}
+      pr={3}
+      pb={2}
+      bg={'transparent'}
+      style={{
+        transform: 'translateY(-100%)'
+      }}>
+      <HStack spacing={'8px'} alignItems="center" whiteSpace={'nowrap'} overflowX={'auto'}>
+        {items.map((item, index) => (
+          <Button
+            key={item.guideId}
+            height={"30px"}
+            variant='primaryMain'
+            style={{
+              flexShrink: '0',
+              minWidth: '60px',
+              paddingLeft: "10px",
+              paddingRight: "10px"
+            }}
+            onClick={() => {
+              onClickGuideItem && onClickGuideItem(index);
+            }}
+          >{item.title}</Button>
+        ))}
+      </HStack>
+    </Box>
+  );
+});
+
 const ChatControllerComponent = React.memo(function ChatControllerComponent({
   chat,
   setChatHistory,
@@ -1364,9 +1421,9 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
                   state.map((item) =>
                     item.dataId === chat.dataId
                       ? {
-                          ...item,
-                          ttsBuffer: response.buffer
-                        }
+                        ...item,
+                        ttsBuffer: response.buffer
+                      }
                       : item
                   )
                 );
@@ -1413,13 +1470,13 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
           {...controlIconStyle}
           {...(!!chat.userGoodFeedback
             ? {
-                color: 'white',
-                bg: 'primary.main',
-                fontWeight: 'bold'
-              }
+              color: 'white',
+              bg: 'primary.main',
+              fontWeight: 'bold'
+            }
             : {
-                _hover: { color: 'primary.main' }
-              })}
+              _hover: { color: 'primary.main' }
+            })}
           name={'core/chat/feedback/goodLight'}
           onClick={onAddUserLike}
         />
@@ -1429,15 +1486,15 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
           {...controlIconStyle}
           {...(!!chat.userBadFeedback
             ? {
-                color: 'white',
-                bg: 'primary.coral',
-                fontWeight: 'bold',
-                onClick: onAddUserDislike
-              }
+              color: 'white',
+              bg: 'primary.coral',
+              fontWeight: 'bold',
+              onClick: onAddUserDislike
+            }
             : {
-                _hover: { color: 'primary.coral' },
-                onClick: onAddUserDislike
-              })}
+              _hover: { color: 'primary.coral' },
+              onClick: onAddUserDislike
+            })}
           name={'core/chat/feedback/badLight'}
         />
       )}
