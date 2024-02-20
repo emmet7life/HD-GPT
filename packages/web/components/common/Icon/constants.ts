@@ -155,5 +155,6 @@ export const iconPaths = {
   'support/user/userLight': () => import('./icons/support/user/userLight.svg'),
   text: () => import('./icons/text.svg'),
   user: () => import('./icons/user.svg'),
-  wx: () => import('./icons/wx.svg')
+  wx: () => import('./icons/wx.svg'),
+  'core/chat/chatStop': () => import('./icons/core/chat/chatStop.svg')
 };

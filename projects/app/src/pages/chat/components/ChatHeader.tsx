@@ -44,7 +44,7 @@ const ChatHeader = ({
     <Flex
       alignItems={['flex-start', 'center']}
       px={[4, 5]}
-      h={['28px', '60px']}
+      h={['30px', '60px']}
       borderBottom={theme.borders.sm}
       overflow={'hidden'}
       color={'myGray.900'}
@@ -77,7 +77,7 @@ const ChatHeader = ({
             <MyIcon
               name={'menu'}
               w={'20px'}
-              h={'20px'}
+              h={'28px'}
               color={'myGray.900'}
               onClick={onOpenSlider}
             />
@@ -91,12 +91,12 @@ const ChatHeader = ({
             w={0}
             justifyContent={'center'}
           >
-            <Avatar src={appAvatar} w={'24px'} placeholder={LOGO_ICON} />
+            <Avatar src={appAvatar} w={'28px'} placeholder={LOGO_ICON} />
             <Box
               ml={1}
               className="textEllipsis"
               fontWeight="bold"
-              fontSize="16px"
+              fontSize="18px"
               onClick={() => {
                 appId && router.push(`/app/detail?appId=${appId}`);
               }}

@@ -13,6 +13,7 @@ interface ConfigType {
   onUploadProgress?: (progressEvent: AxiosProgressEvent) => void;
   cancelToken?: AbortController;
   maxQuantity?: number;
+  baseURL?: string;
 }
 interface ResponseDataType {
   code: number;
@@ -60,6 +61,7 @@ function requestFinish({ url }: { url: string }) {
 function startInterceptors(config: InternalAxiosRequestConfig): InternalAxiosRequestConfig {
   if (config.headers) {
     config.headers.token = getToken();
+    config.headers["Login-Type"] = "applet";
   }
 
   return config;
@@ -118,7 +120,8 @@ function responseError(err: any) {
 const instance = axios.create({
   timeout: 60000, // 超时时间
   headers: {
-    'content-type': 'application/json'
+    'content-type': 'application/json',
+    'Login-Type': 'applet'
   }
 });
 
@@ -130,7 +133,7 @@ instance.interceptors.response.use(responseSuccess, (err) => Promise.reject(err)
 function request(
   url: string,
   data: any,
-  { cancelToken, maxQuantity, ...config }: ConfigType,
+  { cancelToken, maxQuantity, baseURL, ...config }: ConfigType,
   method: Method
 ): any {
   /* 去空 */
@@ -144,7 +147,7 @@ function request(
 
   return instance
     .request({
-      baseURL: '/api',
+      baseURL: baseURL ?? '/api',
       url,
       method,
       data: ['POST', 'PUT'].includes(method) ? data : null,

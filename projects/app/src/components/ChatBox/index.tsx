@@ -71,15 +71,12 @@ import type { AppTTSConfigType, VariableItemType } from '@fastgpt/global/core/mo
 import MessageInput from './MessageInput';
 import { ModuleOutputKeyEnum } from '@fastgpt/global/core/module/constants';
 import ChatBoxDivider from '../core/chat/Divider';
+import type { ChatBottomGuideItem } from '@fastgpt/global/core/hd/type.d';
+import { useChatStore as useHDChatStore } from '@/web/core/chat/hd/storeChat';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 24);
 
 const textareaMinH = '22px';
-
-const chatBottomGuideItems: ChatBottomGuideItem[] = [
-  { title: "恒达微波简介", guideId: "1" },
-  { title: "联系方式", guideId: "2" },
-]
 
 type generatingMessageProps = { text?: string; name?: string; status?: 'running' | 'finish' };
 
@@ -268,6 +265,10 @@ const ChatBox = (
     },
     [generatingScroll]
   );
+
+  const {
+    chatBottomGuideItems
+  } = useHDChatStore();
 
   // 重置输入内容
   const resetInputVal = useCallback((val: string) => {
@@ -898,16 +899,22 @@ const ChatBox = (
         </Box>
       </Box>
       <Box h={'0px'}>
+        <ChatStopChattingComponent
+          onStop={() => chatController.current?.abort('stop')}
+          isChatting={isChatting} />
+      </Box>
+      <Box h={'0px'}>
         <ChatBottomGuideComponent
           items={chatBottomGuideItems}
           onClickGuideItem={(index) => {
             if (index >= 0 && index < chatBottomGuideItems.length) {
               const guideItem = chatBottomGuideItems[index];
               sendPrompt({
-                inputVal: guideItem.title
+                inputVal: guideItem.question
               });
             }
-          }} />
+          }}
+          isChatting={isChatting} />
       </Box>
       {/* message input */}
       {onStartChat && variableIsFinish && active && (
@@ -1225,8 +1232,8 @@ function ChatAvatar({
   const theme = useTheme();
   return (
     <Box
-      w={['2.58rem', '2.68rem']}
-      h={['2.58rem', '2.68rem']}
+      w={['2.36rem', '2.68rem']}
+      h={['2.36rem', '2.68rem']}
       p={'0px'}
       borderRadius={'50%'}
       border={theme.borders.base}
@@ -1261,15 +1268,12 @@ function Empty() {
   );
 }
 
-type ChatBottomGuideItem = {
-  title: string;
-  guideId: string;
-}
 const ChatBottomGuideComponent = React.memo(function ChatBottomGuideComponent(
-  { items, onClickGuideItem }:
-    { items: ChatBottomGuideItem[], onClickGuideItem?: (index: number) => void }) {
+  { items, onClickGuideItem, isChatting = false }:
+    { items: ChatBottomGuideItem[]; onClickGuideItem?: (index: number) => void; isChatting: boolean }) {
   return (
     <Box
+      display={isChatting ? "none" : "flex"}
       overflowX="auto"
       whiteSpace="nowrap"
       pl={3}
@@ -1282,7 +1286,7 @@ const ChatBottomGuideComponent = React.memo(function ChatBottomGuideComponent(
       <HStack spacing={'8px'} alignItems="center" whiteSpace={'nowrap'} overflowX={'auto'}>
         {items.map((item, index) => (
           <Button
-            key={item.guideId}
+            key={item.questionId}
             height={"30px"}
             variant='primaryMain'
             style={{
@@ -1294,11 +1298,34 @@ const ChatBottomGuideComponent = React.memo(function ChatBottomGuideComponent(
             onClick={() => {
               onClickGuideItem && onClickGuideItem(index);
             }}
-          >{item.title}</Button>
+          >{item.question}</Button>
         ))}
       </HStack>
     </Box>
   );
+});
+
+const ChatStopChattingComponent = React.memo(function ChatStopChattingComponent(
+  { onStop, isChatting }: { onStop: () => void; isChatting: boolean; }
+) {
+  return <Flex
+    display={isChatting ? "flex" : "none"}
+    style={{ backgroundColor: 'transparent', transform: 'translateY(-100%)' }}
+    p={3}
+    justifyContent='center' >
+    <Button
+      variant={'primaryGray'}
+      pl={1}
+      pr={3}
+      h={'100%'}
+      borderRadius={'xl'}
+      leftIcon={<MyIcon name={'core/chat/chatStop'} w={'26px'} />}
+      overflow={'hidden'}
+      onClick={() => onStop()}
+    >
+      停止生成
+    </Button>
+  </Flex>
 });
 
 const ChatControllerComponent = React.memo(function ChatControllerComponent({

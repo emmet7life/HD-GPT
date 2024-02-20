@@ -28,6 +28,9 @@ import { useChatStore } from '@/web/core/chat/storeChat';
 import { ChatStatusEnum } from '@fastgpt/global/core/chat/constants';
 import MyBox from '@/components/common/MyBox';
 import { useSearchParams, useParams, usePathname } from 'next/navigation';
+import { getChatPageGuideItems } from '@/web/support/hd/api';
+import type { ChatBottomGuideItem } from '@fastgpt/global/core/hd/type.d';
+import { useChatStore as useHDChatStore } from '@/web/core/chat/hd/storeChat';
 
 const OutLink = ({
   shareId,
@@ -56,7 +59,7 @@ const OutLink = ({
   if (params.get('safeAreaBottom')) {
     try {
       safeAreaBottom = Number(params.get('safeAreaBottom'));
-    } catch (error) {}
+    } catch (error) { }
   }
   console.log('OutLink >> searchParams', searchParams);
   console.log('OutLink >> params', params);
@@ -79,6 +82,9 @@ const OutLink = ({
     delOneHistoryItem,
     clearHistories
   } = useChatStore();
+  const {
+    setChatBottomGuideItems
+  } = useHDChatStore();
   const appId = chatData.appId;
   const outLinkUid: string = authToken || localUId;
 
@@ -233,6 +239,18 @@ const OutLink = ({
     return loadChatInfo(shareId, chatId);
   });
 
+  const {
+    data
+  } = useQuery(['getChatPageGuideItems'], getChatPageGuideItems, {
+    onSuccess(res) {
+      console.log("getChatPageGuideItems success", res);
+      if (res) {
+        setChatBottomGuideItems(res);
+      }
+    }
+  });
+  console.log("getChatPageGuideItems data", data);
+
   // load histories
   useQuery(['loadHistories', outLinkUid, shareId], () => {
     if (shareId && outLinkUid) {
@@ -289,77 +307,77 @@ const OutLink = ({
       >
         {showHistory === '1'
           ? ((children: React.ReactNode) => {
-              return isPc ? (
-                <SideBar>{children}</SideBar>
-              ) : (
-                <Drawer
-                  isOpen={isOpenSlider}
-                  placement="left"
-                  autoFocus={false}
-                  size={'xs'}
-                  onClose={onCloseSlider}
-                >
-                  <DrawerOverlay backgroundColor={'rgba(0,0,0,0.3)'} />
-                  <DrawerContent maxWidth={'250px'} boxShadow={'2px 0 10px rgba(0,0,0,0.15)'}>
-                    {children}
-                  </DrawerContent>
-                </Drawer>
-              );
-            })(
-              <ChatHistorySlider
-                appName={chatData.app.name}
-                appAvatar={chatData.app.avatar}
-                activeChatId={chatId}
-                history={histories.map((item) => ({
-                  id: item.chatId,
-                  title: item.title,
-                  customTitle: item.customTitle,
-                  top: item.top
-                }))}
+            return isPc ? (
+              <SideBar>{children}</SideBar>
+            ) : (
+              <Drawer
+                isOpen={isOpenSlider}
+                placement="left"
+                autoFocus={false}
+                size={'xs'}
                 onClose={onCloseSlider}
-                onChangeChat={(chatId) => {
-                  router.replace({
-                    query: {
-                      ...router.query,
-                      chatId: chatId || ''
-                    }
-                  });
-                  if (!isPc) {
-                    onCloseSlider();
+              >
+                <DrawerOverlay backgroundColor={'rgba(0,0,0,0.3)'} />
+                <DrawerContent maxWidth={'250px'} boxShadow={'2px 0 10px rgba(0,0,0,0.15)'}>
+                  {children}
+                </DrawerContent>
+              </Drawer>
+            );
+          })(
+            <ChatHistorySlider
+              appName={chatData.app.name}
+              appAvatar={chatData.app.avatar}
+              activeChatId={chatId}
+              history={histories.map((item) => ({
+                id: item.chatId,
+                title: item.title,
+                customTitle: item.customTitle,
+                top: item.top
+              }))}
+              onClose={onCloseSlider}
+              onChangeChat={(chatId) => {
+                router.replace({
+                  query: {
+                    ...router.query,
+                    chatId: chatId || ''
                   }
-                }}
-                onDelHistory={({ chatId }) =>
-                  delOneHistory({ appId: chatData.appId, chatId, shareId, outLinkUid })
+                });
+                if (!isPc) {
+                  onCloseSlider();
                 }
-                onClearHistory={() => {
-                  clearHistories({ shareId, outLinkUid });
-                  router.replace({
-                    query: {
-                      ...router.query,
-                      chatId: ''
-                    }
-                  });
-                }}
-                onSetHistoryTop={(e) => {
-                  updateHistory({
-                    ...e,
-                    appId: chatData.appId,
-                    shareId,
-                    outLinkUid
-                  });
-                }}
-                onSetCustomTitle={async (e) => {
-                  updateHistory({
-                    appId: chatData.appId,
-                    chatId: e.chatId,
-                    title: e.title,
-                    customTitle: e.title,
-                    shareId,
-                    outLinkUid
-                  });
-                }}
-              />
-            )
+              }}
+              onDelHistory={({ chatId }) =>
+                delOneHistory({ appId: chatData.appId, chatId, shareId, outLinkUid })
+              }
+              onClearHistory={() => {
+                clearHistories({ shareId, outLinkUid });
+                router.replace({
+                  query: {
+                    ...router.query,
+                    chatId: ''
+                  }
+                });
+              }}
+              onSetHistoryTop={(e) => {
+                updateHistory({
+                  ...e,
+                  appId: chatData.appId,
+                  shareId,
+                  outLinkUid
+                });
+              }}
+              onSetCustomTitle={async (e) => {
+                updateHistory({
+                  appId: chatData.appId,
+                  chatId: e.chatId,
+                  title: e.title,
+                  customTitle: e.title,
+                  shareId,
+                  outLinkUid
+                });
+              }}
+            />
+          )
           : null}
 
         {/* chat container */}
@@ -389,7 +407,7 @@ const OutLink = ({
               userGuideModule={chatData.app?.userGuideModule}
               showFileSelector={checkChatSupportSelectFileByChatModels(chatData.app.chatModels)}
               feedbackType={'user'}
-              onUpdateVariable={(e) => {}}
+              onUpdateVariable={(e) => { }}
               onStartChat={startChat}
               onDelMessage={(e) =>
                 delOneHistoryItem({ ...e, appId: chatData.appId, chatId, shareId, outLinkUid })
