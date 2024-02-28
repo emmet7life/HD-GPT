@@ -19,7 +19,18 @@ export type PagingData<T> = {
 
 export type RequestPaging = { pageNum: number; pageSize: number; [key]: any };
 
+// 微信JSSDK接口定义
+export interface MiniProgramAPI {
+  postMessage(message: any): void;
+  navigateBack(options?: any): void;
+}
+
+export interface WxGlobal {
+  miniProgram: MiniProgramAPI | undefined;
+}
+
 declare global {
+  var wx: WxGlobal | undefined;
   var qaQueueLen: number;
   var vectorQueueLen: number;
 

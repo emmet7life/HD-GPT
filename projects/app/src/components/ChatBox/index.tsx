@@ -249,14 +249,14 @@ const ChatBox = (
             ...item,
             ...(text
               ? {
-                value: item.value + text
-              }
+                  value: item.value + text
+                }
               : {}),
             ...(status && name
               ? {
-                status,
-                moduleName: name
-              }
+                  status,
+                  moduleName: name
+                }
               : {})
           };
         })
@@ -266,9 +266,7 @@ const ChatBox = (
     [generatingScroll]
   );
 
-  const {
-    chatBottomGuideItems
-  } = useHDChatStore();
+  const { chatBottomGuideItems } = useHDChatStore();
 
   // 重置输入内容
   const resetInputVal = useCallback((val: string) => {
@@ -307,7 +305,7 @@ const ChatBox = (
             scrollToBottom();
           }, 100);
         }
-      } catch (error) { }
+      } catch (error) {}
     },
     [questionGuide, shareId]
   );
@@ -413,9 +411,9 @@ const ChatBox = (
               history: newChatList.map((item, i) =>
                 i === newChatList.length - 1
                   ? {
-                    ...item,
-                    value: responseText
-                  }
+                      ...item,
+                      value: responseText
+                    }
                   : item
               )
             });
@@ -481,7 +479,7 @@ const ChatBox = (
           inputVal: delHistory[0].value,
           history: chatHistory.slice(0, index)
         });
-      } catch (error) { }
+      } catch (error) {}
       setLoading(false);
     },
     [chatHistory, onDelMessage, sendPrompt, setLoading]
@@ -600,6 +598,7 @@ const ChatBox = (
   return (
     <Flex flexDirection={'column'} h={'100%'} bg="myGray.100">
       <Script src="/js/html2pdf.bundle.min.js" strategy="lazyOnload"></Script>
+      <Script src="/js/jweixin-1.3.2.js" strategy="lazyOnload"></Script>
       {/* chat box container */}
       <Box ref={ChatBoxRef} flex={'1 0 0'} h={0} w={'100%'} overflow={'overlay'} px={[4, 0]} pb={3}>
         <Box id="chat-container" maxW={['100%', '92%']} h={'100%'} mx={'auto'}>
@@ -616,7 +615,7 @@ const ChatBox = (
             />
           )}
           {/* chat history */}
-          <Box id={'history'} pb={"28px"}>
+          <Box id={'history'} pb={'28px'}>
             {chatHistory.map((item, index) => (
               <Box key={item.dataId} py={5}>
                 {item.obj === 'Human' && (
@@ -628,8 +627,8 @@ const ChatBox = (
                         onDelete={
                           onDelMessage
                             ? () => {
-                              delOneMessage({ dataId: item.dataId, index });
-                            }
+                                delOneMessage({ dataId: item.dataId, index });
+                              }
                             : undefined
                         }
                         onRetry={() => retryInput(index)}
@@ -666,80 +665,80 @@ const ChatBox = (
                         onDelete={
                           onDelMessage
                             ? () => {
-                              delOneMessage({ dataId: item.dataId, index });
-                            }
+                                delOneMessage({ dataId: item.dataId, index });
+                              }
                             : undefined
                         }
                         onMark={
                           showMarkIcon
                             ? () => {
-                              if (!item.dataId) return;
-                              if (item.adminFeedback) {
-                                setAdminMarkData({
-                                  chatItemId: item.dataId,
-                                  datasetId: item.adminFeedback.datasetId,
-                                  collectionId: item.adminFeedback.collectionId,
-                                  dataId: item.adminFeedback.dataId,
-                                  q: item.adminFeedback.q || chatHistory[index - 1]?.value || '',
-                                  a: item.adminFeedback.a
-                                });
-                              } else {
-                                setAdminMarkData({
-                                  chatItemId: item.dataId,
-                                  q: chatHistory[index - 1]?.value || '',
-                                  a: item.value
-                                });
+                                if (!item.dataId) return;
+                                if (item.adminFeedback) {
+                                  setAdminMarkData({
+                                    chatItemId: item.dataId,
+                                    datasetId: item.adminFeedback.datasetId,
+                                    collectionId: item.adminFeedback.collectionId,
+                                    dataId: item.adminFeedback.dataId,
+                                    q: item.adminFeedback.q || chatHistory[index - 1]?.value || '',
+                                    a: item.adminFeedback.a
+                                  });
+                                } else {
+                                  setAdminMarkData({
+                                    chatItemId: item.dataId,
+                                    q: chatHistory[index - 1]?.value || '',
+                                    a: item.value
+                                  });
+                                }
                               }
-                            }
                             : undefined
                         }
                         onAddUserLike={
                           feedbackType !== FeedbackTypeEnum.user || item.userBadFeedback
                             ? undefined
                             : () => {
-                              if (!item.dataId || !chatId || !appId) return;
+                                if (!item.dataId || !chatId || !appId) return;
 
-                              const isGoodFeedback = !!item.userGoodFeedback;
-                              setChatHistory((state) =>
-                                state.map((chatItem) =>
-                                  chatItem.dataId === item.dataId
-                                    ? {
-                                      ...chatItem,
-                                      userGoodFeedback: isGoodFeedback ? undefined : 'yes'
-                                    }
-                                    : chatItem
-                                )
-                              );
-                              try {
-                                updateChatUserFeedback({
-                                  appId,
-                                  chatId,
-                                  chatItemId: item.dataId,
-                                  shareId,
-                                  outLinkUid,
-                                  userGoodFeedback: isGoodFeedback ? undefined : 'yes'
-                                });
-                              } catch (error) { }
-                            }
+                                const isGoodFeedback = !!item.userGoodFeedback;
+                                setChatHistory((state) =>
+                                  state.map((chatItem) =>
+                                    chatItem.dataId === item.dataId
+                                      ? {
+                                          ...chatItem,
+                                          userGoodFeedback: isGoodFeedback ? undefined : 'yes'
+                                        }
+                                      : chatItem
+                                  )
+                                );
+                                try {
+                                  updateChatUserFeedback({
+                                    appId,
+                                    chatId,
+                                    chatItemId: item.dataId,
+                                    shareId,
+                                    outLinkUid,
+                                    userGoodFeedback: isGoodFeedback ? undefined : 'yes'
+                                  });
+                                } catch (error) {}
+                              }
                         }
                         onCloseUserLike={
                           feedbackType === FeedbackTypeEnum.admin
                             ? () => {
-                              if (!item.dataId || !chatId || !appId) return;
-                              setChatHistory((state) =>
-                                state.map((chatItem) =>
-                                  chatItem.dataId === item.dataId
-                                    ? { ...chatItem, userGoodFeedback: undefined }
-                                    : chatItem
-                                )
-                              );
-                              updateChatUserFeedback({
-                                appId,
-                                chatId,
-                                chatItemId: item.dataId,
-                                userGoodFeedback: undefined
-                              });
-                            }
+                                if (!item.dataId || !chatId || !appId) return;
+                                setChatHistory((state) =>
+                                  state.map((chatItem) =>
+                                    chatItem.dataId === item.dataId
+                                      ? { ...chatItem, userGoodFeedback: undefined }
+                                      : chatItem
+                                  )
+                                );
+                                updateChatUserFeedback({
+                                  appId,
+                                  chatId,
+                                  chatItemId: item.dataId,
+                                  userGoodFeedback: undefined
+                                });
+                              }
                             : undefined
                         }
                         onAddUserDislike={(() => {
@@ -764,7 +763,7 @@ const ChatBox = (
                                   shareId,
                                   outLinkUid
                                 });
-                              } catch (error) { }
+                              } catch (error) {}
                             };
                           } else {
                             return () => setFeedbackId(item.dataId);
@@ -773,12 +772,12 @@ const ChatBox = (
                         onReadUserDislike={
                           feedbackType === FeedbackTypeEnum.admin
                             ? () => {
-                              if (!item.dataId) return;
-                              setReadFeedbackData({
-                                chatItemId: item.dataId || '',
-                                content: item.userBadFeedback || ''
-                              });
-                            }
+                                if (!item.dataId) return;
+                                setReadFeedbackData({
+                                  chatItemId: item.dataId || '',
+                                  content: item.userBadFeedback || ''
+                                });
+                              }
                             : undefined
                         }
                       />
@@ -823,8 +822,9 @@ const ChatBox = (
                               !isChatting &&
                               questionGuides.length > 0
                             ) {
-                              return `${replaceText}\n\`\`\`${CodeClassName.questionGuide
-                                }\n${JSON.stringify(questionGuides)}`;
+                              return `${replaceText}\n\`\`\`${
+                                CodeClassName.questionGuide
+                              }\n${JSON.stringify(questionGuides)}`;
                             }
                             return replaceText;
                           })()}
@@ -857,11 +857,11 @@ const ChatBox = (
                                           state.map((chatItem) =>
                                             chatItem.dataId === item.dataId
                                               ? {
-                                                ...chatItem,
-                                                customFeedbacks: chatItem.customFeedbacks?.filter(
-                                                  (item, index) => index !== i
-                                                )
-                                              }
+                                                  ...chatItem,
+                                                  customFeedbacks: chatItem.customFeedbacks?.filter(
+                                                    (item, index) => index !== i
+                                                  )
+                                                }
                                               : chatItem
                                           )
                                         );
@@ -901,7 +901,8 @@ const ChatBox = (
       <Box h={'0px'}>
         <ChatStopChattingComponent
           onStop={() => chatController.current?.abort('stop')}
-          isChatting={isChatting} />
+          isChatting={isChatting}
+        />
       </Box>
       <Box h={'0px'}>
         <ChatBottomGuideComponent
@@ -909,12 +910,24 @@ const ChatBox = (
           onClickGuideItem={(index) => {
             if (index >= 0 && index < chatBottomGuideItems.length) {
               const guideItem = chatBottomGuideItems[index];
-              sendPrompt({
-                inputVal: guideItem.question
-              });
+              if (guideItem.questionId === 'human-handler') {
+                if (wx && wx.miniProgram) {
+                  // console.log("wx.miniProgram", wx.miniProgram);
+                  const miniProgram = wx.miniProgram;
+                  miniProgram.postMessage({
+                    data: { messageType: 'ai-xiaoda-chat', action: guideItem.questionId }
+                  });
+                  miniProgram.navigateBack({ delta: 1 });
+                }
+              } else {
+                sendPrompt({
+                  inputVal: guideItem.question
+                });
+              }
             }
           }}
-          isChatting={isChatting} />
+          isChatting={isChatting}
+        />
       </Box>
       {/* message input */}
       {onStartChat && variableIsFinish && active && (
@@ -971,7 +984,7 @@ const ChatBox = (
                 chatId,
                 chatItemId: readFeedbackData.chatItemId
               });
-            } catch (error) { }
+            } catch (error) {}
             setReadFeedbackData(undefined);
           }}
         />
@@ -997,9 +1010,9 @@ const ChatBox = (
               state.map((chatItem) =>
                 chatItem.dataId === adminMarkData.chatItemId
                   ? {
-                    ...chatItem,
-                    adminFeedback
-                  }
+                      ...chatItem,
+                      adminFeedback
+                    }
                   : chatItem
               )
             );
@@ -1268,12 +1281,18 @@ function Empty() {
   );
 }
 
-const ChatBottomGuideComponent = React.memo(function ChatBottomGuideComponent(
-  { items, onClickGuideItem, isChatting = false }:
-    { items: ChatBottomGuideItem[]; onClickGuideItem?: (index: number) => void; isChatting: boolean }) {
+const ChatBottomGuideComponent = React.memo(function ChatBottomGuideComponent({
+  items,
+  onClickGuideItem,
+  isChatting = false
+}: {
+  items: ChatBottomGuideItem[];
+  onClickGuideItem?: (index: number) => void;
+  isChatting: boolean;
+}) {
   return (
     <Box
-      display={isChatting ? "none" : "flex"}
+      display={isChatting ? 'none' : 'flex'}
       overflowX="auto"
       whiteSpace="nowrap"
       pl={3}
@@ -1282,50 +1301,60 @@ const ChatBottomGuideComponent = React.memo(function ChatBottomGuideComponent(
       bg={'transparent'}
       style={{
         transform: 'translateY(-100%)'
-      }}>
+      }}
+    >
       <HStack spacing={'8px'} alignItems="center" whiteSpace={'nowrap'} overflowX={'auto'}>
         {items.map((item, index) => (
           <Button
             key={item.questionId}
-            height={"30px"}
-            variant='primaryMain'
+            height={'30px'}
+            variant="primaryMain"
             style={{
               flexShrink: '0',
               minWidth: '60px',
-              paddingLeft: "10px",
-              paddingRight: "10px"
+              paddingLeft: '10px',
+              paddingRight: '10px'
             }}
             onClick={() => {
               onClickGuideItem && onClickGuideItem(index);
             }}
-          >{item.question}</Button>
+          >
+            {item.question}
+          </Button>
         ))}
       </HStack>
     </Box>
   );
 });
 
-const ChatStopChattingComponent = React.memo(function ChatStopChattingComponent(
-  { onStop, isChatting }: { onStop: () => void; isChatting: boolean; }
-) {
-  return <Flex
-    display={isChatting ? "flex" : "none"}
-    style={{ backgroundColor: 'transparent', transform: 'translateY(-100%)' }}
-    p={3}
-    justifyContent='center' >
-    <Button
-      variant={'primaryGray'}
-      pl={1}
-      pr={3}
-      h={'100%'}
-      borderRadius={'xl'}
-      leftIcon={<MyIcon name={'core/chat/chatStop'} w={'26px'} />}
-      overflow={'hidden'}
-      onClick={() => onStop()}
+const ChatStopChattingComponent = React.memo(function ChatStopChattingComponent({
+  onStop,
+  isChatting
+}: {
+  onStop: () => void;
+  isChatting: boolean;
+}) {
+  return (
+    <Flex
+      display={isChatting ? 'flex' : 'none'}
+      style={{ backgroundColor: 'transparent', transform: 'translateY(-100%)' }}
+      p={3}
+      justifyContent="center"
     >
-      停止生成
-    </Button>
-  </Flex>
+      <Button
+        variant={'primaryGray'}
+        pl={1}
+        pr={3}
+        h={'100%'}
+        borderRadius={'xl'}
+        leftIcon={<MyIcon name={'core/chat/chatStop'} w={'26px'} />}
+        overflow={'hidden'}
+        onClick={() => onStop()}
+      >
+        停止生成
+      </Button>
+    </Flex>
+  );
 });
 
 const ChatControllerComponent = React.memo(function ChatControllerComponent({
@@ -1448,9 +1477,9 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
                   state.map((item) =>
                     item.dataId === chat.dataId
                       ? {
-                        ...item,
-                        ttsBuffer: response.buffer
-                      }
+                          ...item,
+                          ttsBuffer: response.buffer
+                        }
                       : item
                   )
                 );
@@ -1497,13 +1526,13 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
           {...controlIconStyle}
           {...(!!chat.userGoodFeedback
             ? {
-              color: 'white',
-              bg: 'primary.main',
-              fontWeight: 'bold'
-            }
+                color: 'white',
+                bg: 'primary.main',
+                fontWeight: 'bold'
+              }
             : {
-              _hover: { color: 'primary.main' }
-            })}
+                _hover: { color: 'primary.main' }
+              })}
           name={'core/chat/feedback/goodLight'}
           onClick={onAddUserLike}
         />
@@ -1513,15 +1542,15 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
           {...controlIconStyle}
           {...(!!chat.userBadFeedback
             ? {
-              color: 'white',
-              bg: 'primary.coral',
-              fontWeight: 'bold',
-              onClick: onAddUserDislike
-            }
+                color: 'white',
+                bg: 'primary.coral',
+                fontWeight: 'bold',
+                onClick: onAddUserDislike
+              }
             : {
-              _hover: { color: 'primary.coral' },
-              onClick: onAddUserDislike
-            })}
+                _hover: { color: 'primary.coral' },
+                onClick: onAddUserDislike
+              })}
           name={'core/chat/feedback/badLight'}
         />
       )}
