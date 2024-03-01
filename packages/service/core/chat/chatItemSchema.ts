@@ -42,6 +42,11 @@ const ChatItemSchema = new Schema({
     ref: appCollectionName,
     required: true
   },
+  // 删除标记：0未删除 1已删除
+  delFlag: {
+    type: Number,
+    default: 0
+  },
   time: {
     type: Date,
     default: () => new Date()
@@ -101,5 +106,17 @@ try {
 
 export const MongoChatItem: Model<ChatItemType> =
   models[ChatItemCollectionName] || model(ChatItemCollectionName, ChatItemSchema);
+
+//   // 只执行一次
+// async function addDelFlagToAllDocuments() {
+//   try {
+//     // 更新所有ChatItem文档，如果没有del_flag字段则添加并设为0
+//     await MongoChatItem.updateMany({}, { $set: { delFlag: 0 } }, { upsert: false });
+//     console.log("成功为所有ChatItem文档添加delFlag字段并设为0");
+//   } catch (error) {
+//     console.error("更新过程中发生错误:", error);
+//   }
+// }
+// addDelFlagToAllDocuments();
 
 MongoChatItem.syncIndexes();

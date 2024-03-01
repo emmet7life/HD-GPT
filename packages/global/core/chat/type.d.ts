@@ -36,6 +36,7 @@ export type ChatItemSchema = {
   teamId: string;
   tmbId: string;
   appId: string;
+  delFlag: number;
   time: Date;
   obj: `${ChatRoleEnum}`;
   value: string;

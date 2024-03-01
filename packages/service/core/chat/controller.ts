@@ -17,12 +17,15 @@ export async function getChatItems({
     return { history: [] };
   }
 
-  const history = await MongoChatItem.find({ appId, chatId }, field)
+  // 查询历史记录时，过滤掉delFlag不为0的数据，0标识数据正常，其他表示数据被删除等异常数据
+  const history = await MongoChatItem.find({ appId, chatId, delFlag: 0 }, field)
     .sort({ _id: -1 })
     .limit(limit)
     .lean();
 
   history.reverse();
+
+  // console.log("getChatItems >> history", history);
 
   return { history };
 }

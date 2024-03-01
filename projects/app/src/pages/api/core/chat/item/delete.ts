@@ -24,10 +24,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       per: 'w'
     });
 
-    await MongoChatItem.deleteOne({
+    // deleteOne 更改为 updateOne 实现假删除
+    await MongoChatItem.updateOne({
       appId,
       chatId,
       dataId: contentId
+    }, {
+      $set: {
+        delFlag: 1
+      }
     });
 
     jsonRes(res);
