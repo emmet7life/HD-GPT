@@ -16,6 +16,7 @@ type Props = {
   source: `${ChatSourceEnum}`;
   shareId?: string;
   outLinkUid?: string;
+  userId?: string;
   content: [ChatItemType, ChatItemType];
   metadata?: Record<string, any>;
 };
@@ -25,6 +26,7 @@ export async function saveChat({
   appId,
   teamId,
   tmbId,
+  userId,
   variables,
   updateUseTime,
   source,
@@ -56,6 +58,7 @@ export async function saveChat({
           teamId,
           tmbId,
           appId,
+          sessionUserId: userId || "root",
           ...item
         }))
       )
@@ -84,6 +87,7 @@ export async function saveChat({
           teamId,
           tmbId,
           appId,
+          sessionUserId: userId || "root",
           variables,
           title,
           source,

@@ -34,6 +34,7 @@ type FastGptWebChatProps = {
 type FastGptShareChatProps = {
   shareId?: string;
   outLinkUid?: string;
+  userId?: string;// 会话用户ID
 };
 export type Props = ChatCompletionCreateParams &
   FastGptWebChatProps &
@@ -62,11 +63,14 @@ export default withNextCors(async function handler(req: NextApiRequest, res: Nex
     appId,
     shareId,
     outLinkUid,
+    userId,// 会话用户ID
     stream = false,
     detail = false,
     messages = [],
     variables = {}
   } = req.body as Props;
+
+  // console.log("对话接口 Chat API >> userId", userId);
 
   try {
     const originIp = requestIp.getClientIp(req);
@@ -227,6 +231,7 @@ export default withNextCors(async function handler(req: NextApiRequest, res: Nex
     // save chat
     if (chatId) {
       await saveChat({
+        userId,
         chatId,
         appId: app._id,
         teamId: user.team.teamId,

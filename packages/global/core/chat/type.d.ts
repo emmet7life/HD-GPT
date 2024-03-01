@@ -36,6 +36,7 @@ export type ChatItemSchema = {
   teamId: string;
   tmbId: string;
   appId: string;
+  sessionUserId: string;
   delFlag: number;
   time: Date;
   obj: `${ChatRoleEnum}`;
@@ -60,6 +61,7 @@ export type ChatItemType = {
   dataId?: string;
   obj: ChatItemSchema['obj'];
   value: any;
+  sessionUserId?: string;// 会话用户ID
   userGoodFeedback?: string;
   userBadFeedback?: string;
   customFeedbacks?: ChatItemSchema['customFeedbacks'];

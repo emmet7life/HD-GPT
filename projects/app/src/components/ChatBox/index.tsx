@@ -129,6 +129,9 @@ type Props = {
   shareId?: string;
   outLinkUid?: string;
 
+  // add params
+  userId?: string;
+
   onUpdateVariable?: (e: Record<string, any>) => void;
   onStartChat?: (e: StartChatFnProps) => Promise<{
     responseText: string;
@@ -153,6 +156,7 @@ const ChatBox = (
     chatId,
     shareId,
     outLinkUid,
+    userId,
     safeAreaBottom = 0,
     onUpdateVariable,
     onStartChat,
@@ -249,14 +253,14 @@ const ChatBox = (
             ...item,
             ...(text
               ? {
-                  value: item.value + text
-                }
+                value: item.value + text
+              }
               : {}),
             ...(status && name
               ? {
-                  status,
-                  moduleName: name
-                }
+                status,
+                moduleName: name
+              }
               : {})
           };
         })
@@ -305,7 +309,7 @@ const ChatBox = (
             scrollToBottom();
           }, 100);
         }
-      } catch (error) {}
+      } catch (error) { }
     },
     [questionGuide, shareId]
   );
@@ -348,7 +352,8 @@ const ChatBox = (
             dataId: nanoid(),
             obj: 'Human',
             value: val,
-            status: 'finish'
+            status: 'finish',
+            sessionUserId: userId || "root"
           },
           {
             dataId: nanoid(),
@@ -374,6 +379,8 @@ const ChatBox = (
 
           const messages = adaptChat2GptMessages({ messages: newChatList, reserveId: true });
 
+          console.log("sendPrompt >> messages", messages);
+
           const {
             responseData,
             responseText,
@@ -382,6 +389,7 @@ const ChatBox = (
             chatList: newChatList.map((item) => ({
               dataId: item.dataId,
               obj: item.obj,
+              sessionUserId: item.sessionUserId,// 会话用户ID
               value: item.value,
               status: item.status,
               moduleName: item.moduleName
@@ -411,9 +419,9 @@ const ChatBox = (
               history: newChatList.map((item, i) =>
                 i === newChatList.length - 1
                   ? {
-                      ...item,
-                      value: responseText
-                    }
+                    ...item,
+                    value: responseText
+                  }
                   : item
               )
             });
@@ -479,7 +487,7 @@ const ChatBox = (
           inputVal: delHistory[0].value,
           history: chatHistory.slice(0, index)
         });
-      } catch (error) {}
+      } catch (error) { }
       setLoading(false);
     },
     [chatHistory, onDelMessage, sendPrompt, setLoading]
@@ -627,8 +635,8 @@ const ChatBox = (
                         onDelete={
                           onDelMessage
                             ? () => {
-                                delOneMessage({ dataId: item.dataId, index });
-                              }
+                              delOneMessage({ dataId: item.dataId, index });
+                            }
                             : undefined
                         }
                         onRetry={() => retryInput(index)}
@@ -665,80 +673,80 @@ const ChatBox = (
                         onDelete={
                           onDelMessage
                             ? () => {
-                                delOneMessage({ dataId: item.dataId, index });
-                              }
+                              delOneMessage({ dataId: item.dataId, index });
+                            }
                             : undefined
                         }
                         onMark={
                           showMarkIcon
                             ? () => {
-                                if (!item.dataId) return;
-                                if (item.adminFeedback) {
-                                  setAdminMarkData({
-                                    chatItemId: item.dataId,
-                                    datasetId: item.adminFeedback.datasetId,
-                                    collectionId: item.adminFeedback.collectionId,
-                                    dataId: item.adminFeedback.dataId,
-                                    q: item.adminFeedback.q || chatHistory[index - 1]?.value || '',
-                                    a: item.adminFeedback.a
-                                  });
-                                } else {
-                                  setAdminMarkData({
-                                    chatItemId: item.dataId,
-                                    q: chatHistory[index - 1]?.value || '',
-                                    a: item.value
-                                  });
-                                }
+                              if (!item.dataId) return;
+                              if (item.adminFeedback) {
+                                setAdminMarkData({
+                                  chatItemId: item.dataId,
+                                  datasetId: item.adminFeedback.datasetId,
+                                  collectionId: item.adminFeedback.collectionId,
+                                  dataId: item.adminFeedback.dataId,
+                                  q: item.adminFeedback.q || chatHistory[index - 1]?.value || '',
+                                  a: item.adminFeedback.a
+                                });
+                              } else {
+                                setAdminMarkData({
+                                  chatItemId: item.dataId,
+                                  q: chatHistory[index - 1]?.value || '',
+                                  a: item.value
+                                });
                               }
+                            }
                             : undefined
                         }
                         onAddUserLike={
                           feedbackType !== FeedbackTypeEnum.user || item.userBadFeedback
                             ? undefined
                             : () => {
-                                if (!item.dataId || !chatId || !appId) return;
+                              if (!item.dataId || !chatId || !appId) return;
 
-                                const isGoodFeedback = !!item.userGoodFeedback;
-                                setChatHistory((state) =>
-                                  state.map((chatItem) =>
-                                    chatItem.dataId === item.dataId
-                                      ? {
-                                          ...chatItem,
-                                          userGoodFeedback: isGoodFeedback ? undefined : 'yes'
-                                        }
-                                      : chatItem
-                                  )
-                                );
-                                try {
-                                  updateChatUserFeedback({
-                                    appId,
-                                    chatId,
-                                    chatItemId: item.dataId,
-                                    shareId,
-                                    outLinkUid,
-                                    userGoodFeedback: isGoodFeedback ? undefined : 'yes'
-                                  });
-                                } catch (error) {}
-                              }
-                        }
-                        onCloseUserLike={
-                          feedbackType === FeedbackTypeEnum.admin
-                            ? () => {
-                                if (!item.dataId || !chatId || !appId) return;
-                                setChatHistory((state) =>
-                                  state.map((chatItem) =>
-                                    chatItem.dataId === item.dataId
-                                      ? { ...chatItem, userGoodFeedback: undefined }
-                                      : chatItem
-                                  )
-                                );
+                              const isGoodFeedback = !!item.userGoodFeedback;
+                              setChatHistory((state) =>
+                                state.map((chatItem) =>
+                                  chatItem.dataId === item.dataId
+                                    ? {
+                                      ...chatItem,
+                                      userGoodFeedback: isGoodFeedback ? undefined : 'yes'
+                                    }
+                                    : chatItem
+                                )
+                              );
+                              try {
                                 updateChatUserFeedback({
                                   appId,
                                   chatId,
                                   chatItemId: item.dataId,
-                                  userGoodFeedback: undefined
+                                  shareId,
+                                  outLinkUid,
+                                  userGoodFeedback: isGoodFeedback ? undefined : 'yes'
                                 });
-                              }
+                              } catch (error) { }
+                            }
+                        }
+                        onCloseUserLike={
+                          feedbackType === FeedbackTypeEnum.admin
+                            ? () => {
+                              if (!item.dataId || !chatId || !appId) return;
+                              setChatHistory((state) =>
+                                state.map((chatItem) =>
+                                  chatItem.dataId === item.dataId
+                                    ? { ...chatItem, userGoodFeedback: undefined }
+                                    : chatItem
+                                )
+                              );
+                              updateChatUserFeedback({
+                                appId,
+                                chatId,
+                                chatItemId: item.dataId,
+                                userGoodFeedback: undefined
+                              });
+                            }
                             : undefined
                         }
                         onAddUserDislike={(() => {
@@ -763,7 +771,7 @@ const ChatBox = (
                                   shareId,
                                   outLinkUid
                                 });
-                              } catch (error) {}
+                              } catch (error) { }
                             };
                           } else {
                             return () => setFeedbackId(item.dataId);
@@ -772,12 +780,12 @@ const ChatBox = (
                         onReadUserDislike={
                           feedbackType === FeedbackTypeEnum.admin
                             ? () => {
-                                if (!item.dataId) return;
-                                setReadFeedbackData({
-                                  chatItemId: item.dataId || '',
-                                  content: item.userBadFeedback || ''
-                                });
-                              }
+                              if (!item.dataId) return;
+                              setReadFeedbackData({
+                                chatItemId: item.dataId || '',
+                                content: item.userBadFeedback || ''
+                              });
+                            }
                             : undefined
                         }
                       />
@@ -822,9 +830,8 @@ const ChatBox = (
                               !isChatting &&
                               questionGuides.length > 0
                             ) {
-                              return `${replaceText}\n\`\`\`${
-                                CodeClassName.questionGuide
-                              }\n${JSON.stringify(questionGuides)}`;
+                              return `${replaceText}\n\`\`\`${CodeClassName.questionGuide
+                                }\n${JSON.stringify(questionGuides)}`;
                             }
                             return replaceText;
                           })()}
@@ -857,11 +864,11 @@ const ChatBox = (
                                           state.map((chatItem) =>
                                             chatItem.dataId === item.dataId
                                               ? {
-                                                  ...chatItem,
-                                                  customFeedbacks: chatItem.customFeedbacks?.filter(
-                                                    (item, index) => index !== i
-                                                  )
-                                                }
+                                                ...chatItem,
+                                                customFeedbacks: chatItem.customFeedbacks?.filter(
+                                                  (item, index) => index !== i
+                                                )
+                                              }
                                               : chatItem
                                           )
                                         );
@@ -984,7 +991,7 @@ const ChatBox = (
                 chatId,
                 chatItemId: readFeedbackData.chatItemId
               });
-            } catch (error) {}
+            } catch (error) { }
             setReadFeedbackData(undefined);
           }}
         />
@@ -1010,9 +1017,9 @@ const ChatBox = (
               state.map((chatItem) =>
                 chatItem.dataId === adminMarkData.chatItemId
                   ? {
-                      ...chatItem,
-                      adminFeedback
-                    }
+                    ...chatItem,
+                    adminFeedback
+                  }
                   : chatItem
               )
             );
@@ -1477,9 +1484,9 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
                   state.map((item) =>
                     item.dataId === chat.dataId
                       ? {
-                          ...item,
-                          ttsBuffer: response.buffer
-                        }
+                        ...item,
+                        ttsBuffer: response.buffer
+                      }
                       : item
                   )
                 );
@@ -1526,13 +1533,13 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
           {...controlIconStyle}
           {...(!!chat.userGoodFeedback
             ? {
-                color: 'white',
-                bg: 'primary.main',
-                fontWeight: 'bold'
-              }
+              color: 'white',
+              bg: 'primary.main',
+              fontWeight: 'bold'
+            }
             : {
-                _hover: { color: 'primary.main' }
-              })}
+              _hover: { color: 'primary.main' }
+            })}
           name={'core/chat/feedback/goodLight'}
           onClick={onAddUserLike}
         />
@@ -1542,15 +1549,15 @@ const ChatControllerComponent = React.memo(function ChatControllerComponent({
           {...controlIconStyle}
           {...(!!chat.userBadFeedback
             ? {
-                color: 'white',
-                bg: 'primary.coral',
-                fontWeight: 'bold',
-                onClick: onAddUserDislike
-              }
+              color: 'white',
+              bg: 'primary.coral',
+              fontWeight: 'bold',
+              onClick: onAddUserDislike
+            }
             : {
-                _hover: { color: 'primary.coral' },
-                onClick: onAddUserDislike
-              })}
+              _hover: { color: 'primary.coral' },
+              onClick: onAddUserDislike
+            })}
           name={'core/chat/feedback/badLight'}
         />
       )}

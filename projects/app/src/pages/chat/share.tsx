@@ -55,6 +55,7 @@ const OutLink = ({
   const searchParams = useSearchParams();
   const params = new URLSearchParams(searchParams);
   const avatarUrl = params.get('avatarUrl');
+  const miniProgramUserId = params.get('miniProgramUserId') || undefined;// 微信小程序端传入的用户ID
   let safeAreaBottom = 0;
   if (params.get('safeAreaBottom')) {
     try {
@@ -63,6 +64,7 @@ const OutLink = ({
   }
   console.log('OutLink >> searchParams', searchParams);
   console.log('OutLink >> params', params);
+  console.log('OutLink >> params get miniProgramUserId', miniProgramUserId);
   console.log('OutLink >> params get avatarUrl', avatarUrl);
   console.log('OutLink >> params get safeAreaBottom', safeAreaBottom);
 
@@ -99,7 +101,8 @@ const OutLink = ({
           variables,
           shareId,
           chatId: completionChatId,
-          outLinkUid
+          outLinkUid,
+          userId: miniProgramUserId || "root",// 会话用户ID
         },
         onMessage: generatingMessage,
         abortSignal: controller
@@ -416,6 +419,7 @@ const OutLink = ({
               chatId={chatId}
               shareId={shareId}
               outLinkUid={outLinkUid}
+              userId={miniProgramUserId}
             />
           </Box>
         </Flex>

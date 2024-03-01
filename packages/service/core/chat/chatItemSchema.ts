@@ -28,6 +28,12 @@ const ChatItemSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: userCollectionName
   },
+  // 会话UserId，目前的使用场景：
+  // 1. 微信小程序中点击小达，携带微信小程序userId进入小达并存储该userId
+  sessionUserId: {
+    type: String,
+    default: "root"
+  },
   chatId: {
     type: String,
     require: true
@@ -107,7 +113,7 @@ try {
 export const MongoChatItem: Model<ChatItemType> =
   models[ChatItemCollectionName] || model(ChatItemCollectionName, ChatItemSchema);
 
-//   // 只执行一次
+// // 只执行一次
 // async function addDelFlagToAllDocuments() {
 //   try {
 //     // 更新所有ChatItem文档，如果没有del_flag字段则添加并设为0
@@ -118,5 +124,17 @@ export const MongoChatItem: Model<ChatItemType> =
 //   }
 // }
 // addDelFlagToAllDocuments();
+
+// // 只执行一次
+// async function addUseUserIdToAllDocuments() {
+//   try {
+//     // 更新所有ChatItem文档，如果没有del_flag字段则添加并设为0
+//     await MongoChatItem.updateMany({}, { $set: { sessionUserId: "root" } }, { upsert: false });
+//     console.log("成功为所有ChatItem文档添加sessionUserId字段并设为root");
+//   } catch (error) {
+//     console.error("更新过程中发生错误:", error);
+//   }
+// }
+// addUseUserIdToAllDocuments();
 
 MongoChatItem.syncIndexes();
