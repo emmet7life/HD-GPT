@@ -355,6 +355,7 @@
       }
     },
     "chat": {
+      "Confirm to transfer human service": "Confirm to transfer human service?",
       "Admin Mark Content": "Corrected response",
       "Audio Speech Error": "Audio Speech Error",
       "Confirm to clear history": "Confirm to clear history?",

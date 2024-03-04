@@ -355,6 +355,7 @@
       }
     },
     "chat": {
+      "Confirm to transfer human service": "确认为您转接人工服务？",
       "Admin Mark Content": "纠正后的回复",
       "Audio Speech Error": "语音播报异常",
       "Confirm to clear history": "确认清空该应用的在线聊天记录？分享和 API 调用的记录不会被清空。",

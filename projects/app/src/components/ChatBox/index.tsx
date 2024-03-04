@@ -73,6 +73,7 @@ import { ModuleOutputKeyEnum } from '@fastgpt/global/core/module/constants';
 import ChatBoxDivider from '../core/chat/Divider';
 import type { ChatBottomGuideItem } from '@fastgpt/global/core/hd/type.d';
 import { useChatStore as useHDChatStore } from '@/web/core/chat/hd/storeChat';
+import { useConfirm } from '@/web/common/hooks/useConfirm';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 24);
 
@@ -174,6 +175,12 @@ const ChatBox = (
   const chatController = useRef(new AbortController());
   const questionGuideController = useRef(new AbortController());
   const isNewChatReplace = useRef(false);
+  const isWxMiniProgramEnv = useRef(false);
+
+  const { openConfirm, ConfirmModal } = useConfirm({
+    content: t('core.chat.Confirm to transfer human service')
+  });
+
 
   const [refresh, setRefresh] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatSiteItemType[]>([]);
@@ -315,13 +322,31 @@ const ChatBox = (
   );
 
   /**
+   * human service handler 人工客服处理器
+   */
+  const humanServiceHandler = useCallback(({ action = '' }: {
+    action?: string;
+  }) => {
+    if (wx && wx.miniProgram) {
+      // console.log("wx.miniProgram", wx.miniProgram);
+      const miniProgram = wx.miniProgram;
+      miniProgram.postMessage({
+        data: { messageType: 'ai-xiaoda-chat', action: action || 'human-handler' }
+      });
+      miniProgram.navigateBack({ delta: 1 });
+    }
+  }, []);
+
+  /**
    * user confirm send prompt
    */
   const sendPrompt = useCallback(
     ({
+      directHandle = false,
       inputVal = '',
       history = chatHistory
     }: {
+      directHandle?: boolean;
       inputVal?: string;
       history?: ChatSiteItemType[];
     }) => {
@@ -344,6 +369,49 @@ const ChatBox = (
             status: 'warning'
           });
           return;
+        }
+
+        // 微信小程序环境下才判断是否转人工客服的逻辑
+        if (!directHandle && isWxMiniProgramEnv.current) {
+          const humanServiceKeywords: string[] = [
+            "转人工",
+            "转人工服务",
+            "转人工客服",
+            "转接人工服务",
+            "转接人工客服",
+            "请帮我转接人工服务",
+            "请帮我转人工客服",
+            "人工服务",
+            "人工客服",
+          ];
+
+          const isNeedHumanService = () => {
+            return humanServiceKeywords.some((keyword) => inputVal.includes(keyword)) || inputVal === "人工";
+          }
+
+          if (isNeedHumanService()) {
+            // console.log("弹窗提示，人工服务");
+            openConfirm(
+              // 弹窗确认
+              () => {
+                // 人工客服
+                humanServiceHandler({});
+                // 清空输入内容
+                resetInputVal('');
+              },
+              // 弹窗取消
+              () => {
+                // 继续提问
+                sendPrompt({
+                  inputVal: inputVal,
+                  history: history,
+                  directHandle: true,
+                });
+              }
+            )();
+            return;
+            // 弹窗，终止执行后续代码
+          }
         }
 
         const newChatList: ChatSiteItemType[] = [
@@ -566,6 +634,16 @@ const ChatBox = (
     };
   }, [router.query]);
 
+  // jweixin-1.3.2.js loaded callback
+  const jweixinFileLoaded = useCallback(() => {
+    // @ts-ignore
+    if (window.__wxjs_environment === 'miniprogram') {
+      isWxMiniProgramEnv.current = true;
+    } else {
+      isWxMiniProgramEnv.current = false;
+    }
+  }, [window]);
+
   // add listener
   useEffect(() => {
     const windowMessage = ({ data }: MessageEvent<{ type: 'sendPrompt'; text: string }>) => {
@@ -606,7 +684,15 @@ const ChatBox = (
   return (
     <Flex flexDirection={'column'} h={'100%'} bg="myGray.100">
       <Script src="/js/html2pdf.bundle.min.js" strategy="lazyOnload"></Script>
-      <Script src="/js/jweixin-1.3.2.js" strategy="lazyOnload"></Script>
+      <Script src="/js/jweixin-1.3.2.js" strategy="lazyOnload" onLoad={() => {
+        // @ts-ignore
+        if (!window.WeixinJSBridge || !WeixinJSBridge.invoke) {
+          document.addEventListener('WeixinJSBridgeReady', jweixinFileLoaded, false)
+        } else {
+          jweixinFileLoaded()
+        }
+      }}></Script>
+      <ConfirmModal confirmText='人工服务' closeText='继续提问' />
       {/* chat box container */}
       <Box ref={ChatBoxRef} flex={'1 0 0'} h={0} w={'100%'} overflow={'overlay'} px={[4, 0]} pb={3}>
         <Box id="chat-container" maxW={['100%', '92%']} h={'100%'} mx={'auto'}>
@@ -918,14 +1004,7 @@ const ChatBox = (
             if (index >= 0 && index < chatBottomGuideItems.length) {
               const guideItem = chatBottomGuideItems[index];
               if (guideItem.questionId === 'human-handler') {
-                if (wx && wx.miniProgram) {
-                  // console.log("wx.miniProgram", wx.miniProgram);
-                  const miniProgram = wx.miniProgram;
-                  miniProgram.postMessage({
-                    data: { messageType: 'ai-xiaoda-chat', action: guideItem.questionId }
-                  });
-                  miniProgram.navigateBack({ delta: 1 });
-                }
+                humanServiceHandler({});
               } else {
                 sendPrompt({
                   inputVal: guideItem.question
