@@ -175,7 +175,7 @@ const ChatBox = (
   const chatController = useRef(new AbortController());
   const questionGuideController = useRef(new AbortController());
   const isNewChatReplace = useRef(false);
-  const isWxMiniProgramEnv = useRef(false);
+  const isWxMiniProgramEnv = useRef(true);
 
   const { openConfirm, ConfirmModal } = useConfirm({
     content: t('core.chat.Confirm to transfer human service')
@@ -327,13 +327,20 @@ const ChatBox = (
   const humanServiceHandler = useCallback(({ action = '' }: {
     action?: string;
   }) => {
-    if (wx && wx.miniProgram) {
-      // console.log("wx.miniProgram", wx.miniProgram);
-      const miniProgram = wx.miniProgram;
-      miniProgram.postMessage({
-        data: { messageType: 'ai-xiaoda-chat', action: action || 'human-handler' }
-      });
-      miniProgram.navigateBack({ delta: 1 });
+    let postData = {
+      data: { messageType: 'ai-xiaoda-chat', action: action || 'human-handler' }
+    };
+    let backDelta = { delta: 1 };
+    if (parent.wx) {
+      // 当网页被嵌入iframe组件时，应通过宿主页面的js来调用
+      // 因此宿主页面也必须添加<script type="text/javascript" src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+      // 来加载js文件（本项目中，该页面的宿主页面是xiaoda.html）
+      parent.wx?.miniProgram?.postMessage(postData);
+      parent.wx?.miniProgram?.navigateBack(backDelta);
+    } else {
+      // 当页面被直接加载时，可直接调用
+      wx?.miniProgram?.postMessage(postData);
+      wx?.miniProgram?.navigateBack(backDelta);
     }
   }, []);
 
@@ -372,9 +379,16 @@ const ChatBox = (
         }
 
         // 微信小程序环境下才判断是否转人工客服的逻辑
+        if (!isWxMiniProgramEnv.current) {
+          // 如果值是false，则再检测一遍
+          // @ts-ignore
+          isWxMiniProgramEnv.current = window.__wxjs_environment === 'miniprogram' || parent.window.__wxjs_environment === 'miniprogram';
+        }
+
         if (!directHandle && isWxMiniProgramEnv.current) {
           const humanServiceKeywords: string[] = [
             "转人工",
+            "转接人工",
             "转人工服务",
             "转人工客服",
             "转接人工服务",
@@ -634,10 +648,11 @@ const ChatBox = (
     };
   }, [router.query]);
 
-  // jweixin-1.3.2.js loaded callback
+  // jweixin-1.6.0.js loaded callback
   const jweixinFileLoaded = useCallback(() => {
+    console.log("jweixinFileLoaded >> window", window);
     // @ts-ignore
-    if (window.__wxjs_environment === 'miniprogram') {
+    if (window.__wxjs_environment === 'miniprogram' || parent.window.__wxjs_environment === 'miniprogram') {
       isWxMiniProgramEnv.current = true;
     } else {
       isWxMiniProgramEnv.current = false;
@@ -684,12 +699,17 @@ const ChatBox = (
   return (
     <Flex flexDirection={'column'} h={'100%'} bg="myGray.100">
       <Script src="/js/html2pdf.bundle.min.js" strategy="lazyOnload"></Script>
-      <Script src="/js/jweixin-1.3.2.js" strategy="lazyOnload" onLoad={() => {
+      <Script src="/js/jweixin-1.6.0.js" strategy="lazyOnload" onLoad={() => {
+        // <Script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js" strategy="lazyOnload" onLoad={() => {
+        console.log("jweixin-1.6.0.js loaded successfully");
         // @ts-ignore
         if (!window.WeixinJSBridge || !WeixinJSBridge.invoke) {
-          document.addEventListener('WeixinJSBridgeReady', jweixinFileLoaded, false)
+          console.log("WeixinJSBridge Not Ready");
+          document.addEventListener('WeixinJSBridgeReady', jweixinFileLoaded, false);
+          parent.document.addEventListener('WeixinJSBridgeReady', jweixinFileLoaded, false);
         } else {
-          jweixinFileLoaded()
+          console.log("WeixinJSBridge is Ready");
+          jweixinFileLoaded();
         }
       }}></Script>
       <ConfirmModal confirmText='人工服务' closeText='继续提问' />
@@ -739,7 +759,8 @@ const ChatBox = (
                         borderRadius={'8px 0 8px 8px'}
                         textAlign={'left'}
                       >
-                        <Markdown source={item.value} isChatting={false} />
+                        {/* <Markdown source={item.value} isChatting={false} /> */}
+                        <span>{item.value}</span>
                       </Card>
                     </Box>
                   </>

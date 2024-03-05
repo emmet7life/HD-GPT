@@ -17,7 +17,7 @@ export type PagingData<T> = {
   total?: number;
 };
 
-export type RequestPaging = { pageNum: number; pageSize: number; [key]: any };
+export type RequestPaging = { pageNum: number; pageSize: number;[key]: any };
 
 // 微信JSSDK接口定义
 export interface MiniProgramAPI {
@@ -54,5 +54,6 @@ declare global {
     umami?: {
       track: (event: `${TrackEventName}`, data: any) => void;
     };
+    wx?: WxGlobal;
   }
 }

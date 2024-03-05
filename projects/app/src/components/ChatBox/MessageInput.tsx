@@ -90,9 +90,9 @@ const MessageInput = ({
             state.map((item) =>
               item.id === file.id
                 ? {
-                    ...item,
-                    src: `${location.origin}${src}`
-                  }
+                  ...item,
+                  src: `${location.origin}${src}`
+                }
                 : item
             )
           );
@@ -199,9 +199,9 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
       {...(isPc
         ? {}
         : {
-            boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`,
-            bg: 'white'
-          })}
+          boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`,
+          bg: 'white'
+        })}
       pb={[`${_safeAreaBottom || 0}px`, '0px']}
       w={'100%'}
       maxW={['auto', 'min(800px, 100%)']}
@@ -210,8 +210,8 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
       <Box
         {...(isPc
           ? {
-              boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`
-            }
+            boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`
+          }
           : {})}
         pt={fileList.length > 0 ? '10px' : ['14px', '18px']}
         pb={['6px', '18px']}
@@ -221,13 +221,13 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
         overflow={'hidden'}
         {...(isPc
           ? {
-              border: '1px solid',
-              borderColor: 'rgba(0,0,0,0.12)'
-            }
+            border: '1px solid',
+            borderColor: 'rgba(0,0,0,0.12)'
+          }
           : {
-              borderTop: '1px solid',
-              borderTopColor: 'rgba(0,0,0,0.15)'
-            })}
+            borderTop: '1px solid',
+            borderTopColor: 'rgba(0,0,0,0.15)'
+          })}
       >
         {/* translate loading */}
         <Flex
@@ -339,35 +339,35 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
           {/* input area */}
           <Textarea
             ref={TextareaDom}
-            py={0}
+            py={1.5}
             pl={2}
             fontSize={'1rem'}
             pr={['3px', '3px']}
             {...(isPc
               ? {
-                  border: 'none',
-                  _focusVisible: {
-                    border: 'none'
-                  }
+                border: 'none',
+                _focusVisible: {
+                  border: 'none'
                 }
+              }
               : {
-                  border: '1px solid rgba(212, 212, 212, 1.0)',
-                  _focusVisible: {
-                    border: '1px solid #a882fe'
-                  }
-                })}
+                border: '1px solid rgba(212, 212, 212, 1.0)',
+                _focusVisible: {
+                  border: '1px solid #a882fe'
+                }
+              })}
             placeholder={isSpeaking ? t('core.chat.Speaking') : t('core.chat.Type a message')}
             resize={'none'}
-            overflow={'hidden'}
+            overflow={'auto'}
             borderRadius={'8px'}
             rows={1}
             w={['calc(100% - 50px)', 'calc(100% - 55px)']}
             h={'34px'}
             minH={'34px'}
-            lineHeight={'34px'}
+            lineHeight={'1.5rem'}
             maxHeight={'150px'}
             maxLength={-1}
-            overflowY={'hidden'}
+            overflowY={'auto'}
             whiteSpace={'pre-wrap'}
             wordBreak={'break-all'}
             boxShadow={'none !important'}
@@ -384,13 +384,25 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
             onKeyDown={(e) => {
               // enter send.(pc or iframe && enter and unPress shift)
               const isEnter = e.keyCode === 13;
-              if (isEnter && TextareaDom.current && (e.ctrlKey || e.altKey)) {
-                TextareaDom.current.value += '\n';
+              if (TextareaDom.current && isEnter && ((isPc && (e.ctrlKey || e.altKey)) || !isPc)) {
+
+                // 当前光标所在位置
+                let currentCursorPosition = TextareaDom.current.selectionStart;
+
+                // 调整文本框高度
+                // TextareaDom.current.value += '\n';
                 TextareaDom.current.style.height = `${textareaMinH}px`;
                 TextareaDom.current.style.height = `${Math.max(
                   TextareaDom.current.scrollHeight,
                   textareaMinH
                 )}px`;
+
+                // 将光标移动到新行末尾（即当前行下一行的开始）
+                TextareaDom.current.selectionStart = currentCursorPosition;
+                TextareaDom.current.selectionEnd = currentCursorPosition;
+
+                // e.preventDefault(); // 阻止默认行为，即阻止执行其他可能的操作（如发送）
+
                 return;
               }
 
