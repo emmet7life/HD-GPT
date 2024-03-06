@@ -298,19 +298,19 @@ const CodeLight = ({
 
   if (!inline) {
     return (
-      <Box my={3} borderRadius={'md'} overflow={'overlay'} backgroundColor={'#222'}>
+      <Box my={3} borderRadius={'md'} overflow={'overlay'} backgroundColor={'transparent'}>
         <Flex
           className="code-header"
           py={2}
           px={5}
-          backgroundColor={useColorModeValue('#323641', 'gray.600')}
-          color={'#fff'}
+          backgroundColor={useColorModeValue('#d1d3d3', 'gray.600')}
+          color={useColorModeValue('#222', '#fff')}
           fontSize={'sm'}
           userSelect={'none'}
         >
           <Box flex={1}>{match?.[1]}</Box>
           <Flex cursor={'pointer'} onClick={() => copyData(String(children))} alignItems={'center'}>
-            <Icon name={'copy'} width={15} height={15} fill={'#fff'}></Icon>
+            <Icon name={'copy'} width={15} height={15} fill={useColorModeValue('#222', '#fff')}></Icon>
             <Box ml={1}>复制</Box>
           </Flex>
         </Flex>

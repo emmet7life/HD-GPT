@@ -109,7 +109,8 @@ const MessageCardStyle: BoxProps = {
   borderRadius: '0 8px 8px 8px',
   boxShadow: '0 0 4px rgb(212, 212, 212)',
   display: 'inline-block',
-  maxW: ['calc(100% - 25px)', 'calc(100% - 40px)']
+  maxW: ['calc(100% - 25px)', 'calc(100% - 40px)'],
+  overflowX: 'auto'
 };
 
 type Props = {

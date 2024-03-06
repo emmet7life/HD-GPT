@@ -266,6 +266,15 @@
 
 .markdown table th {
   font-weight: bold;
+  min-width: 120px;
+}
+
+/* 当屏幕宽度小于或等于600px时应用下面的样式 */
+@media screen and (max-width: 600px) {
+  .markdown table th {
+    font-weight: bold;
+    min-width: 160px;
+  }
 }
 
 .markdown table th,
@@ -425,13 +434,13 @@
     margin: 0;
     border: none;
     border-radius: 0;
-    background-color: #292b33 !important;
+    background-color: #e8eaea !important;
     overflow-x: auto;
-    color: #fff;
+    color: #222;
   }
 
   pre code {
-    background-color: #292b33 !important;
+    background-color: #e8eaea !important;
     width: 100%;
   }
 
