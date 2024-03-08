@@ -353,7 +353,7 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
               : {
                 border: '1px solid rgba(212, 212, 212, 1.0)',
                 _focusVisible: {
-                  border: '1px solid #a882fe'
+                  border: '1px solid #20599b'
                 }
               })}
             placeholder={isSpeaking ? t('core.chat.Speaking') : t('core.chat.Type a message')}

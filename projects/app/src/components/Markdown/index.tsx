@@ -5,6 +5,9 @@ import RemarkMath from 'remark-math';
 import RemarkBreaks from 'remark-breaks';
 import RehypeKatex from 'rehype-katex';
 import RemarkGfm from 'remark-gfm';
+import RemarkRehype from 'remark-rehype';
+import RehypeRaw from 'rehype-raw';
+// import RehypeSanitize from 'rehype-sanitize';
 
 import styles from './index.module.scss';
 import dynamic from 'next/dynamic';
@@ -26,6 +29,18 @@ const ChatGuide = dynamic(() => import('./chat/Guide'));
 const QuestionGuide = dynamic(() => import('./chat/QuestionGuide'));
 const ImageBlock = dynamic(() => import('./chat/Image'));
 
+// 定义一个基本的、相对安全的HTML白名单过滤规则
+const sanitizeConfig = {
+  // 允许的元素及其属性
+  // 更多选项请参考rehype-sanitize文档
+  elements: ['a', 'b', 'strong', 'i', 'em', 'img', 'p', 'br', 'span'],
+  attributes: {
+    a: ['href', 'target'],
+    img: ['src', 'alt'],
+    span: ["style"],
+  },
+};
+
 export enum CodeClassName {
   guide = 'guide',
   questionGuide = 'questionGuide',
@@ -35,7 +50,7 @@ export enum CodeClassName {
   img = 'img'
 }
 
-const Markdown = ({ source, isChatting = false }: { source: string; isChatting?: boolean }) => {
+const Markdown = ({ source, isChatting = false, customClassName = undefined }: { source: string; isChatting?: boolean, customClassName?: string }) => {
   const components = useMemo<any>(
     () => ({
       img: Image,
@@ -54,13 +69,16 @@ const Markdown = ({ source, isChatting = false }: { source: string; isChatting?:
 
   return (
     <ReactMarkdown
-      className={`markdown ${styles.markdown}
-      ${isChatting ? `${formatSource ? styles.waitingAnimation : styles.animation}` : ''}
-    `}
-      remarkPlugins={[RemarkMath, RemarkGfm, RemarkBreaks]}
-      rehypePlugins={[RehypeKatex]}
+      className={`markdown
+        ${customClassName ? customClassName : styles.markdown}
+        ${isChatting ? `${formatSource ? styles.waitingAnimation : styles.animation}` : ''}
+      `}
+      skipHtml={true}
+      remarkPlugins={[RemarkMath, RemarkGfm, RemarkBreaks, RemarkRehype]}
+      rehypePlugins={[RehypeRaw, RehypeKatex]}
+      // remarkRehypeOptions={sanitizeConfig}
       components={components}
-      linkTarget={'_blank'}
+    // linkTarget={'_blank'}
     >
       {formatSource}
     </ReactMarkdown>

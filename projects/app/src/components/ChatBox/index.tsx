@@ -65,6 +65,7 @@ const ReadFeedbackModal = dynamic(() => import('./ReadFeedbackModal'));
 const SelectMarkCollection = dynamic(() => import('./SelectMarkCollection'));
 
 import styles from './index.module.scss';
+import MarkdownStyles from '@/components/Markdown/index.module.scss';
 import { postQuestionGuide } from '@/web/core/ai/api';
 import { splitGuideModule } from '@fastgpt/global/core/module/utils';
 import type { AppTTSConfigType, VariableItemType } from '@fastgpt/global/core/module/type.d';
@@ -110,7 +111,31 @@ const MessageCardStyle: BoxProps = {
   boxShadow: '0 0 4px rgb(212, 212, 212)',
   display: 'inline-block',
   maxW: ['calc(100% - 25px)', 'calc(100% - 40px)'],
-  overflowX: 'auto'
+  overflowX: 'auto',
+  fontSize: '15px',// 用户消息字体大小
+};
+
+const WelcomeContainerStyle: BoxProps = {
+  px: 4,
+  py: 3,
+  borderRadius: '0 8px 8px 8px',
+  boxShadow: '0 0 4px rgb(212, 212, 212)',
+  display: 'inline-block',
+  maxW: ['calc(100% - 0px)', 'calc(100% - 10px)'],
+  overflowX: 'auto',
+  position: 'relative',
+  zIndex: 2
+};
+
+const WelcomeCardStyle: BoxProps = {
+  borderRadius: '0 0px 0px 0px',
+  boxShadow: '0 0 0px rgb(0, 0, 0)',
+  display: 'inline-block',
+  maxW: ['calc(100% - 0px)', 'calc(100% - 10px)'],
+  overflowX: 'hidden',
+  overflowY: 'hidden',
+  position: 'relative',
+  zIndex: 10
 };
 
 type Props = {
@@ -718,7 +743,7 @@ const ChatBox = (
       <Box ref={ChatBoxRef} flex={'1 0 0'} h={0} w={'100%'} overflow={'overlay'} px={[4, 0]} pb={3}>
         <Box id="chat-container" maxW={['100%', '92%']} h={'100%'} mx={'auto'}>
           {showEmpty && <Empty />}
-          {!!welcomeText && <WelcomeText appAvatar={appAvatar} welcomeText={welcomeText} />}
+          {!!welcomeText && <WelcomeText welcomeText={welcomeText} />}
           {/* variable input */}
           {!!variableModules?.length && (
             <VariableInput
@@ -1223,20 +1248,30 @@ export const useChatBox = () => {
 };
 
 const WelcomeText = React.memo(function Welcome({
-  appAvatar,
   welcomeText
 }: {
-  appAvatar?: string;
   welcomeText: string;
 }) {
   return (
     <Box py={3}>
-      {/* avatar */}
-      <ChatAvatar src={appAvatar} type={'AI'} placeholder={LOGO_ICON} />
       {/* message */}
-      <Box textAlign={'left'}>
-        <Card order={2} mt={2} {...MessageCardStyle} bg={'white'}>
-          <Markdown source={`~~~guide \n${welcomeText}`} isChatting={false} />
+      <Box position='relative' w={'100%'} {...WelcomeContainerStyle} textAlign={'left'}>
+        {/* background */}
+        <Image src="/icon/welcomeBg.png" w={'100%'} h={'100%'} alt={''} objectFit={'cover'}
+          position="absolute"
+          top={0}
+          left={0}
+          bottom={0}
+          right={0}
+          zIndex="1" />
+        {/* message card */}
+        <Card order={2} mt={2} {...WelcomeCardStyle} bg={'transparent'}>
+          <Flex w={'calc(100%)'} alignItems={'flex-end'} >
+            <Markdown source={`~~~guide \n${welcomeText}`} isChatting={false} customClassName={`${MarkdownStyles.welcomeCard}`} />
+            <Box w={'148px'} mr={'-20px'} mb={'-5px'} backgroundColor={"transparent"}>
+              <Image src="/icon/xiaodaCartoon.png" w={'100%'} alt={''} objectFit={'cover'} />
+            </Box>
+          </Flex>
         </Card>
       </Box>
     </Box>

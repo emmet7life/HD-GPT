@@ -34,6 +34,15 @@
   }
 }
 
+.welcomeCard {
+  @extend .markdown;
+  font-size: 13px !important; // 欢迎（问候语）卡片字体大小
+}
+
+.welcomeCard .markdown {
+  font-size: 13px !important; // 欢迎（问候语）卡片字体大小
+}
+
 .markdown {
   font-size: 15px;
 }
