@@ -645,6 +645,51 @@ const ChatBox = (
       !welcomeText,
     [chatHistory.length, showEmptyIntro, variableModules, welcomeText]
   );
+
+  type WelcomeTextTimePeriod = {
+    start: number;
+    end: number;
+  }
+
+  type WelcomeTextElement = {
+    timePeriod: WelcomeTextTimePeriod;
+    welcomeTexts: string[];
+  }
+
+  type WelcomeTextJsonObj = {
+    data: WelcomeTextElement[]
+  }
+
+  // 获取当前时间的小时单位
+  const getCurrentHour = function () {
+    var date = new Date();
+    return date.getHours();
+  }
+
+  /* 随机从问候语数据（可能返回的是一个JSON对象序列化后的字符串）中抽出一个问候语 */
+  const randomWelcomeText = useMemo(() => {
+    if (!welcomeText) return welcomeText;
+    try {
+      const welcomeTextObj = JSON.parse(welcomeText) as WelcomeTextJsonObj;
+      if (welcomeTextObj) {
+        var currentHour = getCurrentHour();
+        const jsonData = welcomeTextObj.data;
+        for (var i = 0; i < jsonData.length; i++) {
+          var welcomeElement = jsonData[i];
+          var timePeriod = welcomeElement.timePeriod;
+          if (currentHour >= timePeriod.start && currentHour < timePeriod.end) {
+            const welcomeTextStr = welcomeElement.welcomeTexts[Math.floor(Math.random() * welcomeElement.welcomeTexts.length)];
+            return welcomeTextStr;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("问候语解析失败");
+    }
+    // 默认返回
+    return "<span style=\"color: #20599b; font-size: 18px; font-weight: 900;\">您好</span>\n欢迎光临恒达微波!我是您的A助手\"**小达**\"随时随地为您提供产品咨询、业务办理等各类服务，期待我的服务能给您带来愉快的体验。请问小达能为您做什么呢?";
+  }, [welcomeText]);
+
   const statusBoxData = useMemo(() => {
     const colorMap = {
       loading: 'myGray.700',
@@ -743,7 +788,7 @@ const ChatBox = (
       <Box ref={ChatBoxRef} flex={'1 0 0'} h={0} w={'100%'} overflow={'overlay'} px={[4, 0]} pb={3}>
         <Box id="chat-container" maxW={['100%', '92%']} h={'100%'} mx={'auto'}>
           {showEmpty && <Empty />}
-          {!!welcomeText && <WelcomeText welcomeText={welcomeText} />}
+          {!!randomWelcomeText && <WelcomeText welcomeText={randomWelcomeText} />}
           {/* variable input */}
           {!!variableModules?.length && (
             <VariableInput
@@ -1446,8 +1491,9 @@ const ChatBottomGuideComponent = React.memo(function ChatBottomGuideComponent({
       style={{
         transform: 'translateY(-100%)'
       }}
+      zIndex={100}
     >
-      <HStack spacing={'8px'} alignItems="center" whiteSpace={'nowrap'} overflowX={'auto'}>
+      <HStack spacing={'8px'} alignItems="center" whiteSpace={'nowrap'} overflowX={'auto'} zIndex={100}>
         {items.map((item, index) => (
           <Button
             key={item.questionId}
