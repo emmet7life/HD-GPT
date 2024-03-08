@@ -1267,7 +1267,8 @@ const WelcomeText = React.memo(function Welcome({
         {/* message card */}
         <Card order={2} mt={2} {...WelcomeCardStyle} bg={'transparent'}>
           <Flex w={'calc(100%)'} alignItems={'flex-end'} >
-            <Markdown source={`~~~guide \n${welcomeText}`} isChatting={false} customClassName={`${MarkdownStyles.welcomeCard}`} />
+            {/* source={`~~~guide \n${welcomeText}`} */}
+            <Markdown source={`${welcomeText}`} isChatting={false} customClassName={`${MarkdownStyles.welcomeCard}`} />
             <Box w={'148px'} mr={'-20px'} mb={'-5px'} backgroundColor={"transparent"}>
               <Image src="/icon/xiaodaCartoon.png" w={'100%'} alt={''} objectFit={'cover'} />
             </Box>

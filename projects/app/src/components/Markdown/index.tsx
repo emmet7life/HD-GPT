@@ -7,7 +7,7 @@ import RehypeKatex from 'rehype-katex';
 import RemarkGfm from 'remark-gfm';
 import RemarkRehype from 'remark-rehype';
 import RehypeRaw from 'rehype-raw';
-// import RehypeSanitize from 'rehype-sanitize';
+import RehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 
 import styles from './index.module.scss';
 import dynamic from 'next/dynamic';
@@ -28,18 +28,6 @@ const EChartsCodeBlock = dynamic(() => import('./img/EChartsCodeBlock'));
 const ChatGuide = dynamic(() => import('./chat/Guide'));
 const QuestionGuide = dynamic(() => import('./chat/QuestionGuide'));
 const ImageBlock = dynamic(() => import('./chat/Image'));
-
-// 定义一个基本的、相对安全的HTML白名单过滤规则
-const sanitizeConfig = {
-  // 允许的元素及其属性
-  // 更多选项请参考rehype-sanitize文档
-  elements: ['a', 'b', 'strong', 'i', 'em', 'img', 'p', 'br', 'span'],
-  attributes: {
-    a: ['href', 'target'],
-    img: ['src', 'alt'],
-    span: ["style"],
-  },
-};
 
 export enum CodeClassName {
   guide = 'guide',
@@ -67,16 +55,33 @@ const Markdown = ({ source, isChatting = false, customClassName = undefined }: {
     .replace(/(http[s]?:\/\/[^\s，。]+)([。，])/g, '$1 $2')
     .replace(/\n*(\[QUOTE SIGN\]\(.*\))/g, '$1');
 
+  // console.log("formatSource", formatSource);
+  // console.log("defaultSchema", defaultSchema);
+
+
+  // 定义一个基本的、相对安全的HTML白名单过滤规则
+  const sanitizeConfig = {
+    ...defaultSchema,
+    // 允许的元素及其属性
+    attributes: {
+      ...defaultSchema.attributes,
+      span: [
+        ...(defaultSchema.attributes?.span || []),
+        "style"
+      ],
+    },
+  };
+  // console.log("sanitizeConfig", sanitizeConfig);
+
   return (
     <ReactMarkdown
       className={`markdown
         ${customClassName ? customClassName : styles.markdown}
         ${isChatting ? `${formatSource ? styles.waitingAnimation : styles.animation}` : ''}
       `}
-      skipHtml={true}
+      skipHtml={false}
       remarkPlugins={[RemarkMath, RemarkGfm, RemarkBreaks, RemarkRehype]}
-      rehypePlugins={[RehypeRaw, RehypeKatex]}
-      // remarkRehypeOptions={sanitizeConfig}
+      rehypePlugins={[RehypeRaw, RehypeKatex, [RehypeSanitize, sanitizeConfig]]}
       components={components}
     // linkTarget={'_blank'}
     >
