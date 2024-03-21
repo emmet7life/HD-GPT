@@ -28,6 +28,14 @@ export const splitText2Chunks = (props: {
     return match.replace(/\n/g, codeBlockMarker);
   });
 
+  text = text.replace(/(?<!^|\n)\*(\S)|(\S)\*(?=\S)/gm, function (match, p1, p2) {
+    if (p1 || p2) {
+      // 如果p1或p2匹配成功，说明*的前后至少有一个非空字符
+      return match.replace('*', ' * ');
+    }
+    return match; // 实际上，在这个正则表达式中，所有匹配的*都应该被替换
+  });
+
   // The larger maxLen is, the next sentence is less likely to trigger splitting
   const stepReges: { reg: RegExp; maxLen: number }[] = [
     ...customReg.map((text) => ({ reg: new RegExp(`(${text})`, 'g'), maxLen: chunkLen * 1.4 })),
