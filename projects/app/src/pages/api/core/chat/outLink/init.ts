@@ -42,10 +42,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { history } = await getChatItems({
       appId: app._id,
       chatId,
-      limit: 30,
-      field: `dataId obj value userGoodFeedback userBadFeedback ${
-        shareChat.responseDetail ? `adminFeedback ${ModuleOutputKeyEnum.responseData}` : ''
-      } `
+      limit: 200,
+      field: `dataId obj value userGoodFeedback userBadFeedback ${shareChat.responseDetail ? `adminFeedback ${ModuleOutputKeyEnum.responseData}` : ''
+        } `
     });
 
     // pick share response field

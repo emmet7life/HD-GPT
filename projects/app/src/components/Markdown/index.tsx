@@ -79,9 +79,11 @@ const Markdown = ({ source, isChatting = false, customClassName = undefined }: {
         ${customClassName ? customClassName : styles.markdown}
         ${isChatting ? `${formatSource ? styles.waitingAnimation : styles.animation}` : ''}
       `}
-      skipHtml={false}
+      skipHtml={true}
       remarkPlugins={[RemarkMath, RemarkGfm, RemarkBreaks, RemarkRehype]}
-      rehypePlugins={[RehypeRaw, RehypeKatex, [RehypeSanitize, sanitizeConfig]]}
+      // RehypeSanitize配置方式有问题，暂时不用
+      // rehypePlugins={[RehypeRaw, RehypeKatex, [RehypeSanitize, sanitizeConfig]]}
+      rehypePlugins={[RehypeRaw, RehypeKatex]}
       components={components}
     // linkTarget={'_blank'}
     >

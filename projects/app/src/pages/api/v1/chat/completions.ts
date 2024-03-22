@@ -202,7 +202,7 @@ export default withNextCors(async function handler(req: NextApiRequest, res: Nex
     const { history } = await getChatItems({
       appId: app._id,
       chatId,
-      limit: 30,
+      limit: 200,
       field: `dataId obj value`
     });
     const concatHistories = history.concat(chatMessages);

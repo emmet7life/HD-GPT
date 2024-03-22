@@ -43,10 +43,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { history } = await getChatItems({
       appId,
       chatId,
-      limit: 30,
-      field: `dataId obj value adminFeedback userBadFeedback userGoodFeedback ${
-        ModuleOutputKeyEnum.responseData
-      } ${loadCustomFeedbacks ? 'customFeedbacks' : ''}`
+      limit: 200,
+      field: `dataId obj value adminFeedback userBadFeedback userGoodFeedback ${ModuleOutputKeyEnum.responseData
+        } ${loadCustomFeedbacks ? 'customFeedbacks' : ''}`
     });
 
     jsonRes<InitChatResponse>(res, {
