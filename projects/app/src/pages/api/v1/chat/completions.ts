@@ -34,7 +34,7 @@ type FastGptWebChatProps = {
 type FastGptShareChatProps = {
   shareId?: string;
   outLinkUid?: string;
-  userId?: string;// 会话用户ID
+  userId?: string; // 会话用户ID
 };
 export type Props = ChatCompletionCreateParams &
   FastGptWebChatProps &
@@ -63,7 +63,7 @@ export default withNextCors(async function handler(req: NextApiRequest, res: Nex
     appId,
     shareId,
     outLinkUid,
-    userId,// 会话用户ID
+    userId, // 会话用户ID
     stream = false,
     detail = false,
     messages = [],
@@ -222,7 +222,7 @@ export default withNextCors(async function handler(req: NextApiRequest, res: Nex
       variables,
       histories: concatHistories,
       startParams: {
-        userChatInput: question.value
+        userChatInput: '### 客户问题 ###\n' + question.value
       },
       stream,
       detail
