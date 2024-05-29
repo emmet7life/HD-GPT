@@ -7,7 +7,11 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: process.env.NODE_ENV === 'development' ? false : true,
   compress: true,
-  webpack(config, { isServer }) {
+  //pageExtensions: ['js', 'jsx', 'ts', 'tsx'], // 确保匹配文件扩展名
+  webpack(config, { dev, isServer }) {
+    if (dev && !isServer) {
+      config.devtool = 'source-map';
+    }
     if (!isServer) {
       config.resolve = {
         ...config.resolve,
@@ -26,7 +30,7 @@ const nextConfig = {
       kerberos: false,
       'supports-color': false,
       'bson-ext': false,
-      'pg-native': false
+      'pg-native': false //'@': path.resolve(__dirname, 'src') // 添加别名
     });
     config.module = {
       ...config.module,
