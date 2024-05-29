@@ -222,7 +222,7 @@ export default withNextCors(async function handler(req: NextApiRequest, res: Nex
       variables,
       histories: concatHistories,
       startParams: {
-        userChatInput: '### 客户问题 ###\n' + question.value
+        userChatInput: question.value//'### 客户问题 ###\n' + 
       },
       stream,
       detail

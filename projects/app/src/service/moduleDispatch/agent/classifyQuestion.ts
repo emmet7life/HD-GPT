@@ -89,6 +89,10 @@ async function toolChoice({
   inputs: { agents, systemPrompt, userChatInput }
 }: Props & { cqModel: FunctionModelItemType }) {
   const messages: ChatItemType[] = [
+    {
+      obj: ChatRoleEnum.System,
+      value: "你是一个问题分类的专家，你要结合历史对话记录的上下文环境和背景知识将我的问题分类。当你无法明确得分类问题时，让我们一步一步思考，得出你的分类结果。"
+    },
     ...histories,
     {
       obj: ChatRoleEnum.Human,
@@ -103,23 +107,34 @@ ${systemPrompt}
     }
   ];
 
+  console.log("toolChoice 消息处理 messages", messages);
+
   const filterMessages = ChatContextFilter({
     messages,
     maxTokens: cqModel.maxContext
   });
-  const adaptMessages = adaptChat2GptMessages({ messages: filterMessages, reserveId: false });
+  var adaptMessages = adaptChat2GptMessages({ messages: filterMessages, reserveId: false });
+  // console.log("toolChoice 消息处理 adaptMessages", adaptMessages);
+
+  // adaptMessages.reverse();
+
+  // console.log("toolChoice 消息处理 reverse adaptMessages", adaptMessages);
 
   // function body
   const agentFunction = {
     name: agentFunName,
-    description: '根据对话记录及补充的背景知识，对问题进行分类，并返回对应的类型字段',
+    description: '结合历史对话记录的上下文环境和背景知识，对问题进行分类，并返回对应的类型字段',
     parameters: {
       type: 'object',
       properties: {
         type: {
           type: 'string',
           description: `问题类型。下面是几种可选的问题类型: ${agents
-            .map((item) => `${item.value}，返回：'${item.key}'`)
+            .map((item) => {
+              const mapped = `${item.value}，返回：'${item.key}'`;
+              console.log("agentFunction >> mapped", mapped);
+              return mapped;
+            })
             .join('；')}`,
           enum: agents.map((item) => item.key)
         }
@@ -142,10 +157,20 @@ ${systemPrompt}
     tool_choice: { type: 'function', function: { name: agentFunName } }
   });
 
+
+  // const type = response?.choices?.[0]?.message?.content || "";
+  // const contents = JSON.stringify({ type: type.trim() });
+  console.log("toolChoice 返回结果 response：", response)
+  // console.log("toolChoice 返回结果 message", response?.choices?.[0]?.message)
+  // console.log("toolChoice 返回结果 function", response?.choices?.[0]?.message?.tool_calls?.[0]?.function)
+  // console.log("最终返回结果 contents：", contents)
+
   try {
     const arg = JSON.parse(
       response?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments || ''
     );
+    console.log("toolChoice 返回结果 arg", arg)
+    // const arg = JSON.parse(contents || '');
 
     return {
       arg,
