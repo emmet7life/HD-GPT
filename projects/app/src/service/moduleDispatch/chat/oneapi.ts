@@ -65,6 +65,9 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
 
   stream = stream && isResponseAnswerText;
 
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> systemPrompt", systemPrompt);
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> userChatInput", userChatInput);
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> history count", history);
   const chatHistories = getHistories(history, histories);
 
   // temperature adapt
@@ -79,6 +82,9 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
     model: modelConstantsData,
     quoteTemplate
   });
+
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> quoteText", quoteText);
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> quotePrompt", quotePrompt);
 
   // censor model and system key
   if (modelConstantsData.censor && !user.openaiAccount?.key) {
@@ -109,14 +115,17 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
   temperature = Math.max(temperature, 0.01);
   const ai = getAIApi(user.openaiAccount, 480000);
 
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> defaultSystemChatPrompt", modelConstantsData.defaultSystemChatPrompt);
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> messages", messages);
+
   const concatMessages = [
     ...(modelConstantsData.defaultSystemChatPrompt
       ? [
-          {
-            role: ChatCompletionRequestMessageRoleEnum.System,
-            content: modelConstantsData.defaultSystemChatPrompt
-          }
-        ]
+        {
+          role: ChatCompletionRequestMessageRoleEnum.System,
+          content: modelConstantsData.defaultSystemChatPrompt
+        }
+      ]
       : []),
     ...(await Promise.all(
       messages.map(async (item) => ({
@@ -132,6 +141,13 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
     return Promise.reject('core.chat.error.Messages empty');
   }
 
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> res", res);
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> model", model);
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> temperature", temperature);
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> max_tokens", max_tokens);
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> stream", stream);
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> concatMessages", concatMessages);
+
   const response = await ai.chat.completions.create(
     {
       model,
@@ -140,8 +156,8 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
       stream,
       presence_penalty: 0,
       frequency_penalty: 0,
-      top_p: 1,
-      // seed: temperature < 0.3 ? 1 : undefined,
+      top_p: 1,//0.8
+      // seed: temperature < 0.3 ? 1 : undefined,// 1234,
       messages: concatMessages
     },
     {
@@ -151,6 +167,8 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
     }
   );
 
+  // console.log("moduleDispatch >> oneapi.ts >> completions >> response", response);
+
   const { answerText, inputTokens, outputTokens, completeMessages } = await (async () => {
     if (stream) {
       // sse response
@@ -159,6 +177,9 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
         detail,
         stream: response
       });
+
+      // console.log("moduleDispatch >> oneapi.ts >> completions >> answer", answer);
+
       // count tokens
       const completeMessages = filterMessages.concat({
         obj: ChatRoleEnum.AI,
@@ -298,19 +319,19 @@ function getChatMessages({
 }) {
   const question = quoteText
     ? replaceVariable(quotePrompt || Prompt_QuotePromptList[0].value, {
-        quote: quoteText,
-        question: userChatInput
-      })
+      quote: quoteText,
+      question: userChatInput
+    })
     : userChatInput;
 
   const messages: ChatItemType[] = [
     ...(systemPrompt
       ? [
-          {
-            obj: ChatRoleEnum.System,
-            value: systemPrompt
-          }
-        ]
+        {
+          obj: ChatRoleEnum.System,
+          value: systemPrompt
+        }
+      ]
       : []),
     ...histories,
     {
@@ -397,6 +418,9 @@ async function streamResponse({
     const content = part.choices?.[0]?.delta?.content || '';
     answer += content;
 
+    // console.log("moduleDispatch >> oneapi.ts >> completions >> content >>", content);
+    // console.log("moduleDispatch >> oneapi.ts >> completions >> answer >>", answer);
+
     responseWrite({
       write,
       event: detail ? sseResponseEventEnum.answer : undefined,
@@ -406,9 +430,9 @@ async function streamResponse({
     });
   }
 
-  if (!answer) {
-    return Promise.reject('core.chat API is error or undefined');
-  }
+  // if (!answer) {
+  //   return Promise.reject('core.chat API is error or undefined');
+  // }
 
   return { answer };
 }

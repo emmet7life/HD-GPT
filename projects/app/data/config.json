@@ -5,6 +5,14 @@
     "qaMaxProcess": 15,
     "pgHNSWEfSearch": 100
   },
+  "ocrEnv": {
+    "model": "",
+    "apiUrl": "",
+    "apiKey": "",
+    "apiBaseUrl": "http://113.200.66.98:5000",
+    "apiPath": "/ocr",
+    "params": {}
+  },
   "chatModels": [
     {
       "model": "gpt-3.5-turbo",

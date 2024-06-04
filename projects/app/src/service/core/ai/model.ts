@@ -32,6 +32,14 @@ export function getReRankModel(model?: string) {
   return global.reRankModels.find((item) => item.model === model);
 }
 
+export function getOcrModel() {
+  return {
+    model: global.ocrEnv.model,
+    apiKey: global.ocrEnv.apiKey,
+    apiUrl: global.ocrEnv.apiUrl,
+  };
+}
+
 export enum ModelTypeEnum {
   chat = 'chat',
   qa = 'qa',

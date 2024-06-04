@@ -52,3 +52,12 @@ export type WhisperModelType = {
   inputPrice: number;
   outputPrice?: number;
 };
+
+export type BaseModelType = {
+  model: string;
+  apiKey: string;
+  apiUrl: string;
+  apiBaseUrl: string;
+  apiPath: string;
+  maxResponse?: number;
+}

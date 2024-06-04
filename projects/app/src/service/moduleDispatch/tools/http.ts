@@ -104,7 +104,7 @@ export const dispatchHttpRequest = async (props: HttpRequestProps): Promise<Http
       ...response
     };
   } catch (error) {
-    console.log(error);
+    console.warn("http.ts module catch error", error);
 
     return {
       [ModuleOutputKeyEnum.failed]: true,

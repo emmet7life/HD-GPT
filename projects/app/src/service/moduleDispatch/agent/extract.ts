@@ -43,14 +43,18 @@ export async function dispatchContentExtract(props: Props): Promise<Response> {
   const extractModel = getExtractModel(model);
   const chatHistories = getHistories(history, histories);
 
+  // console.log("extract.ts >> dispatchContentExtract >> chatHistories:", chatHistories);
+
   const { arg, inputTokens, outputTokens } = await (async () => {
     if (extractModel.toolChoice) {
+      // console.log("extract.ts >> dispatchContentExtract >> run toolChoice");
       return toolChoice({
         ...props,
         histories: chatHistories,
         extractModel
       });
     }
+    // console.log("extract.ts >> dispatchContentExtract >> run completions");
     return completions({
       ...props,
       histories: chatHistories,
@@ -130,6 +134,9 @@ ${description || '根据用户要求获取适当的 JSON 字符串。'}
 当前问题: "${content}"`
     }
   ];
+
+  console.log("extract.ts >> toolChoice >> messages:", messages);
+
   const filterMessages = ChatContextFilter({
     messages,
     maxTokens: extractModel.maxContext
@@ -177,6 +184,8 @@ ${description || '根据用户要求获取适当的 JSON 字符串。'}
     tool_choice: { type: 'function', function: { name: agentFunName } }
   });
 
+  console.log("extract.ts >> toolChoice >> response:", response);
+
   const arg: Record<string, any> = (() => {
     try {
       return JSON.parse(
@@ -189,6 +198,8 @@ ${description || '根据用户要求获取适当的 JSON 字符串。'}
       return {};
     }
   })();
+
+  console.log("extract.ts >> toolChoice >> arg:", arg);
 
   return {
     rawResponse: response?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments || '',
@@ -212,8 +223,7 @@ async function completions({
         json: extractKeys
           .map(
             (item) =>
-              `{"key":"${item.key}", "description":"${item.desc}", "required":${item.required}${
-                item.enum ? `, "enum":"[${item.enum.split('\n')}]"` : ''
+              `{"key":"${item.key}", "description":"${item.desc}", "required":${item.required}${item.enum ? `, "enum":"[${item.enum.split('\n')}]"` : ''
               }}`
           )
           .join('\n'),

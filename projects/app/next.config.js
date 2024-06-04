@@ -9,7 +9,7 @@ const nextConfig = {
   compress: true,
   //pageExtensions: ['js', 'jsx', 'ts', 'tsx'], // 确保匹配文件扩展名
   webpack(config, { dev, isServer }) {
-    if (dev && !isServer) {
+    if (dev) {
       config.devtool = 'source-map';
     }
     if (!isServer) {

@@ -1,0 +1,37 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "Next.js: Full Stack",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/projects/app/node_modules/next/dist/bin/next",
+            "args": [
+                "dev"
+            ],
+            "runtimeArgs": [
+                "--inspect"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "node",
+            "port": 9229
+        },
+        {
+            "type": "pwa-chrome",
+            "request": "launch",
+            "name": "Next.js: Chrome",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/projects/app",
+            "sourceMaps": true,
+            "trace": true,
+            "sourceMapPathOverrides": {
+                "webpack:///./*": "${webRoot}/*"
+            }
+        }
+    ]
+}

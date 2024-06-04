@@ -5,13 +5,15 @@ import type {
   VectorModelItemType,
   AudioSpeechModels,
   WhisperModelType,
-  ReRankModelItemType
+  ReRankModelItemType,
+  BaseModelType
 } from '@fastgpt/global/core/ai/model.d';
 
 import type { FastGPTFeConfigsType } from '@fastgpt/global/common/system/types/index.d';
 import { AppSimpleEditConfigTemplateType } from '@fastgpt/global/core/app/type';
 
 export type InitDateResponse = {
+  ocrModel: BaseModelType;
   chatModels: ChatModelItemType[];
   qaModels: LLMModelItemType[];
   cqModels: FunctionModelItemType[];

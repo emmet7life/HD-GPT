@@ -13,6 +13,10 @@ import { IMG_BLOCK_KEY } from '@fastgpt/global/core/chat/constants';
 import { addDays } from 'date-fns';
 import { useRequest } from '@/web/common/hooks/useRequest';
 import { MongoImageTypeEnum } from '@fastgpt/global/common/file/image/constants';
+import { postOcrQuestion } from '@/web/core/ai/api';
+import { postOcrRequest } from '@/web/core/ai/api';
+import { ocrModel } from '@/web/common/system/staticData';
+import { useEditOcrQuestion } from '@/web/common/hooks/useEditOcrQuestion';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
 
 enum FileTypeEnum {
@@ -64,7 +68,14 @@ const MessageInput = ({
   const { t } = useTranslation();
   const textareaMinH = 34;
   const [fileList, setFileList] = useState<FileItemType[]>([]);
-  const havInput = !!TextareaDom.current?.value || fileList.length > 0;
+  const [fileUploading, setFileUploading] = useState<boolean>();
+  const [ocrRequesting, setOcrRequesting] = useState<boolean>();
+  const havInput = !!TextareaDom.current?.value && !fileUploading && !ocrRequesting;// || fileList.length > 0;
+
+  const { onOpenModal, EditModal: EditOcrQuestionModal } = useEditOcrQuestion({
+    title: t('core.chat.Custom History Title'),
+    placeholder: t('core.chat.Custom History Title Description')
+  });
 
   const { File, onOpen: onOpenSelectFile } = useSelectFile({
     fileType: 'image/*',
@@ -83,7 +94,7 @@ const MessageInput = ({
             maxH: 4329,
             maxSize: 1024 * 1024 * 5,
             // 30 day expired.
-            expiredTime: addDays(new Date(), 7),
+            expiredTime: addDays(new Date(), 9999999),
             shareId
           });
           setFileList((state) =>
@@ -96,15 +107,55 @@ const MessageInput = ({
                 : item
             )
           );
+          setFileUploading(false);
         } catch (error) {
           setFileList((state) => state.filter((item) => item.id !== file.id));
           console.log(error);
+          setFileUploading(false);
           return Promise.reject(error);
         }
+      } else {
+        setFileUploading(false);
       }
     },
     errorToast: t('common.Upload File Failed')
   });
+
+  const onTextareaDomTextChangedHandler = useCallback(() => {
+    if (TextareaDom.current) {
+      // 当前光标所在位置
+      let currentCursorPosition = TextareaDom.current.selectionStart;
+
+      // 调整文本框高度
+      // TextareaDom.current.value += '\n';
+      TextareaDom.current.style.height = `${textareaMinH}px`;
+      TextareaDom.current.style.height = `${Math.max(
+        TextareaDom.current.scrollHeight,
+        textareaMinH
+      )}px`;
+
+      // 将光标移动到新行末尾（即当前行下一行的开始）
+      TextareaDom.current.selectionStart = currentCursorPosition;
+      TextareaDom.current.selectionEnd = currentCursorPosition;
+      // e.preventDefault(); // 阻止默认行为，即阻止执行其他可能的操作（如发送）
+    }
+  }, [textareaMinH])
+
+  const replaceHostAndPort = useCallback((url: string, newHost: string) => {
+    try {
+      const parsedUrl = new URL(url);
+      const newParsedUrl = new URL(newHost);
+
+      parsedUrl.protocol = newParsedUrl.protocol;
+      parsedUrl.hostname = newParsedUrl.hostname;
+      parsedUrl.port = newParsedUrl.port;
+
+      return parsedUrl.toString();
+    } catch (error) {
+      console.error('Invalid URL:', error);
+      return url;
+    }
+  }, []);
 
   const onSelectFile = useCallback(
     async (files: File[]) => {
@@ -113,8 +164,9 @@ const MessageInput = ({
       }
       const loadFiles = await Promise.all(
         files.map(
-          (file) =>
-            new Promise<FileItemType>((resolve, reject) => {
+          (file) => {
+            setFileUploading(true);
+            return new Promise<FileItemType>((resolve, reject) => {
               if (file.type.includes('image')) {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -142,27 +194,75 @@ const MessageInput = ({
                 });
               }
             })
+          }
         )
       );
 
-      setFileList((state) => [...state, ...loadFiles]);
+      // setFileList((state) => [...state, ...loadFiles]);
+      setFileList(loadFiles);// 暂时只允许传递一张图片
     },
     [uploadFile]
   );
 
+  useEffect(() => {
+    console.log("PROGRESS fileList updated", fileList);
+    const ocrRequest = async () => {
+      try {
+        setOcrRequesting(true);
+        const images = fileList.filter((item) => item.type === FileTypeEnum.image);
+        const imgSrcList = images.map((img) => img.src)
+        for (let index = 0; index < imgSrcList.length; index++) {
+          const imgSrc = imgSrcList[index] || "";
+          if (imgSrc) {
+
+            // const ocrContent = ``;
+            // const result = await postOcrQuestion({ message: ocrContent, shareId: shareId });
+            // console.log("MessageInput.tsx >> onSelectFile OCR 识别总结:", result);
+            // if (TextareaDom.current) {
+            //   TextareaDom.current.value = result;
+            // }
+            // console.log("global.ocrEnv", global.ocrEnv);
+
+            // console.log("PROGRESS ocrRequest ocrModel", ocrModel);
+
+            const result = await postOcrRequest({
+              imageUrl: replaceHostAndPort(imgSrc, "https://hd.hdmicrowave.com"),
+              apiBaseUrl: ocrModel.apiBaseUrl,
+              apiPath: ocrModel.apiPath
+            });
+            console.log("PROGRESS ocrRequest postOcrRequest OCR识别:", result);
+            if (TextareaDom.current && result) {
+              var newValue = TextareaDom.current.value;
+              if (newValue) {
+                newValue += "\n";
+              }
+              TextareaDom.current.value = newValue + (result.content || "");
+              onTextareaDomTextChangedHandler();
+            }
+          }
+        }
+        setOcrRequesting(false);
+      } catch (error) {
+        console.log("PROGRESS ocrRequest catch error", error);
+        setOcrRequesting(false);
+      }
+    }
+    ocrRequest();
+  }, [fileList]);
+
   const handleSend = useCallback(async () => {
     const textareaValue = TextareaDom.current?.value || '';
 
-    const images = fileList.filter((item) => item.type === FileTypeEnum.image);
-    const imagesText =
-      images.length === 0
-        ? ''
-        : `\`\`\`${IMG_BLOCK_KEY}
-${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
-\`\`\`
-`;
-
-    const inputMessage = `${imagesText}${textareaValue}`;
+    //     const images = fileList.filter((item) => item.type === FileTypeEnum.image);
+    //     const imagesText =
+    //       images.length === 0
+    //         ? ''
+    //         : `\`\`\`${IMG_BLOCK_KEY}
+    // ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
+    // \`\`\`
+    // `;
+    //     const inputMessage = `${imagesText}${textareaValue}`;
+    const inputMessage = `${textareaValue}`;
 
     onSendMessage(inputMessage);
     setFileList([]);
@@ -320,13 +420,18 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
           {showFileSelector && (
             <Flex
               h={'34px'}
+              marginRight={["2", "2"]}
               alignItems={'center'}
               justifyContent={'center'}
               cursor={'pointer'}
               transform={'translateY(1px)'}
               onClick={() => {
                 if (isSpeaking) return;
-                onOpenSelectFile();
+                // onOpenSelectFile();
+                onOpenModal({
+                  defaultVal: "XXXXX",
+                  onSuccess: (e) => { console.log("XXXXX", e) }
+                });
               }}
             >
               <MyTooltip label={t('core.chat.Select Image')}>
@@ -361,7 +466,7 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
             overflow={'auto'}
             borderRadius={'8px'}
             rows={1}
-            w={['calc(100% - 50px)', 'calc(100% - 55px)']}
+            w={['calc(100% - 76px)', 'calc(100% - 75px)']}
             h={'34px'}
             minH={'34px'}
             lineHeight={'1.5rem'}
@@ -385,24 +490,7 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
               // enter send.(pc or iframe && enter and unPress shift)
               const isEnter = e.keyCode === 13;
               if (TextareaDom.current && isEnter && ((isPc && (e.ctrlKey || e.altKey)) || !isPc)) {
-
-                // 当前光标所在位置
-                let currentCursorPosition = TextareaDom.current.selectionStart;
-
-                // 调整文本框高度
-                // TextareaDom.current.value += '\n';
-                TextareaDom.current.style.height = `${textareaMinH}px`;
-                TextareaDom.current.style.height = `${Math.max(
-                  TextareaDom.current.scrollHeight,
-                  textareaMinH
-                )}px`;
-
-                // 将光标移动到新行末尾（即当前行下一行的开始）
-                TextareaDom.current.selectionStart = currentCursorPosition;
-                TextareaDom.current.selectionEnd = currentCursorPosition;
-
-                // e.preventDefault(); // 阻止默认行为，即阻止执行其他可能的操作（如发送）
-
+                onTextareaDomTextChangedHandler();
                 return;
               }
 
@@ -452,6 +540,7 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
                   flexShrink={0}
                   h={['26px', '32px']}
                   w={['26px', '32px']}
+                  marginRight={[3, 3]}
                   borderRadius={'md'}
                   cursor={'pointer'}
                   _hover={{ bg: '#F5F5F8' }}
@@ -522,6 +611,8 @@ ${images.map((img) => JSON.stringify({ src: img.src })).join('\n')}
             )}
           </Flex>
         </Flex>
+
+        <EditOcrQuestionModal />
       </Box>
     </Box>
   );

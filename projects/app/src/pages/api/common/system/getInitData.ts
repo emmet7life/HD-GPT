@@ -22,6 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   jsonRes<InitDateResponse>(res, {
     data: {
       feConfigs: global.feConfigs,
+      ocrModel: global.ocrEnv,
       chatModels: global.chatModels,
       qaModels: global.qaModels,
       cqModels: global.cqModels,
@@ -122,6 +123,10 @@ export async function initSystemConfig() {
       ...fileRes.systemEnv,
       ...(dbConfig.systemEnv || {})
     },
+    ocrEnv: {
+      ...fileRes.ocrEnv,
+      ...(dbConfig.ocrEnv || {})
+    },
     chatModels: dbConfig.chatModels || fileRes.chatModels || [],
     qaModels: dbConfig.qaModels || fileRes.qaModels || [],
     cqModels: dbConfig.cqModels || fileRes.cqModels || [],
@@ -136,6 +141,7 @@ export async function initSystemConfig() {
   // set config
   global.feConfigs = config.feConfigs;
   global.systemEnv = config.systemEnv;
+  global.ocrEnv = config.ocrEnv;
 
   global.chatModels = config.chatModels;
   global.qaModels = config.qaModels;
@@ -150,6 +156,7 @@ export async function initSystemConfig() {
   console.log({
     feConfigs: global.feConfigs,
     systemEnv: global.systemEnv,
+    ocrEnv: global.ocrEnv,
     chatModels: global.chatModels,
     qaModels: global.qaModels,
     cqModels: global.cqModels,

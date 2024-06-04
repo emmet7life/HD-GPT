@@ -10,12 +10,14 @@ import type {
   ReRankModelItemType,
   VectorModelItemType,
   AudioSpeechModelType,
-  WhisperModelType
+  WhisperModelType,
+  BaseModelType
 } from '@fastgpt/global/core/ai/model.d';
 
 export let feConfigs: FastGPTFeConfigsType = {};
 export let systemVersion = '0.0.0';
 
+export let ocrModel: BaseModelType;
 export let chatModelList: ChatModelItemType[] = [];
 export let vectorModelList: VectorModelItemType[] = [];
 export let qaModelList: LLMModelItemType[] = [];
@@ -36,6 +38,8 @@ export const clientInitData = async (): Promise<{
   try {
     const res = await getSystemInitData();
     feConfigs = res.feConfigs || {};
+
+    ocrModel = res.ocrModel;
 
     chatModelList = res.chatModels ?? chatModelList;
     vectorModelList = res.vectorModels ?? vectorModelList;

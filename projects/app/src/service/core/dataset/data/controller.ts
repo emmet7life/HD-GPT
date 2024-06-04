@@ -81,10 +81,10 @@ export async function insertData2Dataset({
   indexes =
     Array.isArray(indexes) && indexes.length > 0
       ? indexes.map((index) => ({
-          ...index,
-          dataId: undefined,
-          defaultIndex: indexes?.length === 1 && index.text === qaStr ? true : index.defaultIndex
-        }))
+        ...index,
+        dataId: undefined,
+        defaultIndex: indexes?.length === 1 && index.text === qaStr ? true : index.defaultIndex
+      }))
       : [getDefaultIndex({ q, a })];
 
   // insert to vector store
@@ -293,9 +293,14 @@ export async function searchDatasetData(props: {
     datasetIds = []
   } = props;
 
+  console.log("searchDatasetData >>>> props", props);
+
   /* init params */
   searchMode = DatasetSearchModeMap[searchMode] ? searchMode : DatasetSearchModeEnum.embedding;
   usingReRank = usingReRank && global.reRankModels.length > 0;
+
+  console.log("searchDatasetData >>>> searchMode", searchMode);
+  console.log("searchDatasetData >>>> usingReRank", usingReRank);
 
   // Compatible with topk limit
   if (maxTokens < 50) {
@@ -542,13 +547,13 @@ export async function searchDatasetData(props: {
         for (const item of list) {
           map[item.id] = map[item.id]
             ? {
-                amount: map[item.id].amount + 1,
-                data: item
-              }
+              amount: map[item.id].amount + 1,
+              data: item
+            }
             : {
-                amount: 1,
-                data: item
-              };
+              amount: 1,
+              data: item
+            };
         }
       }
 
@@ -562,6 +567,9 @@ export async function searchDatasetData(props: {
     const fullTextRecallResList: SearchDataResponseItemType[][] = [];
     let totalCharsLength = 0;
     for await (const query of queries) {
+
+      console.log("searchDatasetData >>>> embeddingRecall&fullTextRecall query", query);
+
       const [{ charsLength, embeddingRecallResults }, { fullTextRecallResults }] =
         await Promise.all([
           embeddingRecall({

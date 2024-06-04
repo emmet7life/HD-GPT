@@ -12,6 +12,7 @@ import type {
 export type FastGPTConfigFileType = {
   feConfigs: FastGPTFeConfigsType;
   systemEnv: SystemEnvType;
+  ocrEnv: OcrEnvType;
   chatModels: ChatModelItemType[];
   qaModels: LLMModelItemType[];
   cqModels: FunctionModelItemType[];
@@ -66,8 +67,18 @@ export type SystemEnvType = {
   pgHNSWEfSearch: number;
 };
 
+export type OcrEnvType = {
+  model: string,
+  apiUrl: string,
+  apiKey: string,
+  params: Record<string, any>
+  apiBaseUrl: string,
+  apiPath: string
+}
+
 declare global {
   var feConfigs: FastGPTFeConfigsType;
+  var ocrEnv: OcrEnvType;
   var systemEnv: SystemEnvType;
   var systemInitd: boolean;
 }
