@@ -70,11 +70,17 @@ const MessageInput = ({
   const [fileList, setFileList] = useState<FileItemType[]>([]);
   const [fileUploading, setFileUploading] = useState<boolean>();
   const [ocrRequesting, setOcrRequesting] = useState<boolean>();
-  const havInput = !!TextareaDom.current?.value && !fileUploading && !ocrRequesting;// || fileList.length > 0;
+  const [isQuestionMaking, setIsQuestionMaking] = useState<boolean>(false);
+  const havInput = !!TextareaDom.current?.value && !fileUploading && !ocrRequesting; // || fileList.length > 0;
+  const [ocrText, setOcrText] = useState<string>('');
+  const [ocrQuestion, setOcrQuestion] = useState<string>('');
+  const [ocrImageSrc, setOcrImageSrc] = useState<string>('');
 
   const { onOpenModal, EditModal: EditOcrQuestionModal } = useEditOcrQuestion({
-    title: t('core.chat.Custom History Title'),
-    placeholder: t('core.chat.Custom History Title Description')
+    ocrText: ocrText,
+    ocrQuestion: ocrQuestion,
+    imgSrc: ocrImageSrc,
+    shareId: shareId
   });
 
   const { File, onOpen: onOpenSelectFile } = useSelectFile({
@@ -101,9 +107,9 @@ const MessageInput = ({
             state.map((item) =>
               item.id === file.id
                 ? {
-                  ...item,
-                  src: `${location.origin}${src}`
-                }
+                    ...item,
+                    src: `${location.origin}${src}`
+                  }
                 : item
             )
           );
@@ -139,23 +145,44 @@ const MessageInput = ({
       TextareaDom.current.selectionEnd = currentCursorPosition;
       // e.preventDefault(); // 阻止默认行为，即阻止执行其他可能的操作（如发送）
     }
-  }, [textareaMinH])
+  }, [textareaMinH]);
 
-  const replaceHostAndPort = useCallback((url: string, newHost: string) => {
+  const onMakeLLMQuestion = useCallback(async (ocrText: string) => {
+    var finalQuestion = '';
     try {
-      const parsedUrl = new URL(url);
-      const newParsedUrl = new URL(newHost);
-
-      parsedUrl.protocol = newParsedUrl.protocol;
-      parsedUrl.hostname = newParsedUrl.hostname;
-      parsedUrl.port = newParsedUrl.port;
-
-      return parsedUrl.toString();
+      setIsQuestionMaking(true);
+      if (ocrText) {
+        const question = await postOcrQuestion({ message: ocrText, shareId: '' });
+        console.log('OCR:', question);
+        finalQuestion = question;
+        // 更新内容
+        // setOcrQuestion(question);
+      } else {
+        // 处理 OCR 文本为空的情况
+      }
     } catch (error) {
-      console.error('Invalid URL:', error);
-      return url;
+      console.log('Error making question:', error);
+    } finally {
+      setIsQuestionMaking(false);
+      return finalQuestion;
     }
   }, []);
+
+  // const replaceHostAndPort = useCallback((url: string, newHost: string) => {
+  //   try {
+  //     const parsedUrl = new URL(url);
+  //     const newParsedUrl = new URL(newHost);
+
+  //     parsedUrl.protocol = newParsedUrl.protocol;
+  //     parsedUrl.hostname = newParsedUrl.hostname;
+  //     parsedUrl.port = newParsedUrl.port;
+
+  //     return parsedUrl.toString();
+  //   } catch (error) {
+  //     console.error('Invalid URL:', error);
+  //     return url;
+  //   }
+  // }, []);
 
   const onSelectFile = useCallback(
     async (files: File[]) => {
@@ -163,58 +190,55 @@ const MessageInput = ({
         return;
       }
       const loadFiles = await Promise.all(
-        files.map(
-          (file) => {
-            setFileUploading(true);
-            return new Promise<FileItemType>((resolve, reject) => {
-              if (file.type.includes('image')) {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => {
-                  const item = {
-                    id: nanoid(),
-                    rawFile: file,
-                    type: FileTypeEnum.image,
-                    name: file.name,
-                    icon: reader.result as string
-                  };
-                  uploadFile(item);
-                  resolve(item);
-                };
-                reader.onerror = () => {
-                  reject(reader.error);
-                };
-              } else {
-                resolve({
+        files.map((file) => {
+          setFileUploading(true);
+          return new Promise<FileItemType>((resolve, reject) => {
+            if (file.type.includes('image')) {
+              const reader = new FileReader();
+              reader.readAsDataURL(file);
+              reader.onload = () => {
+                const item = {
                   id: nanoid(),
                   rawFile: file,
-                  type: FileTypeEnum.file,
+                  type: FileTypeEnum.image,
                   name: file.name,
-                  icon: 'file/pdf'
-                });
-              }
-            })
-          }
-        )
+                  icon: reader.result as string
+                };
+                uploadFile(item);
+                resolve(item);
+              };
+              reader.onerror = () => {
+                reject(reader.error);
+              };
+            } else {
+              resolve({
+                id: nanoid(),
+                rawFile: file,
+                type: FileTypeEnum.file,
+                name: file.name,
+                icon: 'file/pdf'
+              });
+            }
+          });
+        })
       );
 
       // setFileList((state) => [...state, ...loadFiles]);
-      setFileList(loadFiles);// 暂时只允许传递一张图片
+      setFileList(loadFiles); // 暂时只允许传递一张图片
     },
     [uploadFile]
   );
 
   useEffect(() => {
-    console.log("PROGRESS fileList updated", fileList);
+    console.log('PROGRESS fileList updated', fileList);
     const ocrRequest = async () => {
       try {
         setOcrRequesting(true);
         const images = fileList.filter((item) => item.type === FileTypeEnum.image);
-        const imgSrcList = images.map((img) => img.src)
+        const imgSrcList = images.map((img) => img.src);
         for (let index = 0; index < imgSrcList.length; index++) {
-          const imgSrc = imgSrcList[index] || "";
+          const imgSrc = imgSrcList[index] || '';
           if (imgSrc) {
-
             // const ocrContent = ``;
             // const result = await postOcrQuestion({ message: ocrContent, shareId: shareId });
             // console.log("MessageInput.tsx >> onSelectFile OCR 识别总结:", result);
@@ -225,28 +249,53 @@ const MessageInput = ({
 
             // console.log("PROGRESS ocrRequest ocrModel", ocrModel);
 
-            const result = await postOcrRequest({
-              imageUrl: replaceHostAndPort(imgSrc, "https://hd.hdmicrowave.com"),
-              apiBaseUrl: ocrModel.apiBaseUrl,
-              apiPath: ocrModel.apiPath
-            });
-            console.log("PROGRESS ocrRequest postOcrRequest OCR识别:", result);
-            if (TextareaDom.current && result) {
-              var newValue = TextareaDom.current.value;
-              if (newValue) {
-                newValue += "\n";
+            // const result = await postOcrRequest({
+            //   imageUrl: replaceHostAndPort(imgSrc, "https://hd.hdmicrowave.com"),
+            //   apiBaseUrl: ocrModel.apiBaseUrl,
+            //   apiPath: ocrModel.apiPath
+            // });
+            // console.log("PROGRESS ocrRequest postOcrRequest OCR识别:", result);
+
+            // setOcrText(result.content);
+            // setOcrImageSrc(result.url);
+
+            setOcrText('');
+            setOcrQuestion('');
+            setOcrImageSrc(imgSrc);
+
+            onOpenModal({
+              defaultVal: imgSrc,
+              onSuccess: (questionText) => {
+                console.log('XXXXX questionText', questionText);
+                if (TextareaDom.current && questionText) {
+                  var newValue = TextareaDom.current.value;
+                  if (newValue) {
+                    newValue += '\n';
+                  }
+                  TextareaDom.current.value = newValue + (questionText || '');
+                  onTextareaDomTextChangedHandler();
+                }
               }
-              TextareaDom.current.value = newValue + (result.content || "");
-              onTextareaDomTextChangedHandler();
-            }
+            });
+
+            setFileList([]);
+
+            // if (TextareaDom.current && result) {
+            //   var newValue = TextareaDom.current.value;
+            //   if (newValue) {
+            //     newValue += "\n";
+            //   }
+            //   TextareaDom.current.value = newValue + (result.content || "");
+            //   onTextareaDomTextChangedHandler();
+            // }
           }
         }
         setOcrRequesting(false);
       } catch (error) {
-        console.log("PROGRESS ocrRequest catch error", error);
+        console.log('PROGRESS ocrRequest catch error', error);
         setOcrRequesting(false);
       }
-    }
+    };
     ocrRequest();
   }, [fileList]);
 
@@ -299,9 +348,9 @@ const MessageInput = ({
       {...(isPc
         ? {}
         : {
-          boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`,
-          bg: 'white'
-        })}
+            boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`,
+            bg: 'white'
+          })}
       pb={[`${_safeAreaBottom || 0}px`, '0px']}
       w={'100%'}
       maxW={['auto', 'min(800px, 100%)']}
@@ -310,8 +359,8 @@ const MessageInput = ({
       <Box
         {...(isPc
           ? {
-            boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`
-          }
+              boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`
+            }
           : {})}
         pt={fileList.length > 0 ? '10px' : ['14px', '18px']}
         pb={['6px', '18px']}
@@ -321,13 +370,13 @@ const MessageInput = ({
         overflow={'hidden'}
         {...(isPc
           ? {
-            border: '1px solid',
-            borderColor: 'rgba(0,0,0,0.12)'
-          }
+              border: '1px solid',
+              borderColor: 'rgba(0,0,0,0.12)'
+            }
           : {
-            borderTop: '1px solid',
-            borderTopColor: 'rgba(0,0,0,0.15)'
-          })}
+              borderTop: '1px solid',
+              borderTopColor: 'rgba(0,0,0,0.15)'
+            })}
       >
         {/* translate loading */}
         <Flex
@@ -420,18 +469,14 @@ const MessageInput = ({
           {showFileSelector && (
             <Flex
               h={'34px'}
-              marginRight={["2", "2"]}
+              marginRight={['2', '2']}
               alignItems={'center'}
               justifyContent={'center'}
               cursor={'pointer'}
               transform={'translateY(1px)'}
               onClick={() => {
                 if (isSpeaking) return;
-                // onOpenSelectFile();
-                onOpenModal({
-                  defaultVal: "XXXXX",
-                  onSuccess: (e) => { console.log("XXXXX", e) }
-                });
+                onOpenSelectFile();
               }}
             >
               <MyTooltip label={t('core.chat.Select Image')}>
@@ -450,17 +495,17 @@ const MessageInput = ({
             pr={['3px', '3px']}
             {...(isPc
               ? {
-                border: 'none',
-                _focusVisible: {
-                  border: 'none'
+                  border: 'none',
+                  _focusVisible: {
+                    border: 'none'
+                  }
                 }
-              }
               : {
-                border: '1px solid rgba(212, 212, 212, 1.0)',
-                _focusVisible: {
-                  border: '1px solid #20599b'
-                }
-              })}
+                  border: '1px solid rgba(212, 212, 212, 1.0)',
+                  _focusVisible: {
+                    border: '1px solid #20599b'
+                  }
+                })}
             placeholder={isSpeaking ? t('core.chat.Speaking') : t('core.chat.Type a message')}
             resize={'none'}
             overflow={'auto'}
@@ -612,7 +657,11 @@ const MessageInput = ({
           </Flex>
         </Flex>
 
-        <EditOcrQuestionModal />
+        <EditOcrQuestionModal
+          iconSrc={ocrImageSrc}
+          isQuestionMaking={isQuestionMaking}
+          onMakeLLMQuestion={onMakeLLMQuestion}
+        />
       </Box>
     </Box>
   );

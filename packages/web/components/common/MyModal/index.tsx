@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { WheelEventHandler, useState } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -7,12 +7,15 @@ import {
   ModalCloseButton,
   ModalContentProps,
   Box,
-  Image
+  Image,
+  useDisclosure
 } from '@chakra-ui/react';
 import MyIcon from '../Icon';
 
 export interface MyModalProps extends ModalContentProps {
   iconSrc?: string;
+  iconW?: string;
+  iconH?: string;
   title?: any;
   isCentered?: boolean;
   isOpen: boolean;
@@ -24,6 +27,8 @@ const CustomModal = ({
   isOpen,
   onClose,
   iconSrc,
+  iconW,
+  iconH,
   title,
   children,
   isCentered,
@@ -31,6 +36,22 @@ const CustomModal = ({
   maxW = ['90vw', '600px'],
   ...props
 }: MyModalProps) => {
+  const {
+    isOpen: isImageModalOpen,
+    onOpen: OnImageModalOpen,
+    onClose: onImageModalClose
+  } = useDisclosure();
+  const [scale, setScale] = useState(1);
+
+  const handleWheel: WheelEventHandler<HTMLImageElement> = (e) => {
+    setScale((prevScale) => {
+      const newScale = prevScale + e.deltaY * 0.5 * -0.01;
+      if (newScale < 0.5) return 0.5;
+      if (newScale > 10) return 10;
+      return newScale;
+    });
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -61,8 +82,16 @@ const CustomModal = ({
           >
             {iconSrc && (
               <>
-                {iconSrc.startsWith('/') ? (
-                  <Image mr={3} objectFit={'contain'} alt="" src={iconSrc} w={'20px'} />
+                {iconSrc.startsWith('/') || iconSrc.startsWith('http') ? (
+                  <Image
+                    mr={3}
+                    objectFit={'contain'}
+                    alt=""
+                    src={iconSrc}
+                    w={iconW || '20px'}
+                    h={iconH || 'auto'}
+                    onClick={OnImageModalOpen}
+                  />
                 ) : (
                   <MyIcon mr={3} name={iconSrc as any} w={'20px'} />
                 )}
@@ -84,6 +113,26 @@ const CustomModal = ({
         >
           {children}
         </Box>
+
+        <Modal isOpen={isImageModalOpen} onClose={onImageModalClose} isCentered>
+          <ModalOverlay />
+          <ModalContent boxShadow={'none'} maxW={'auto'} w="auto" bg={'transparent'}>
+            <Image
+              transform={`scale(${scale})`}
+              borderRadius={'md'}
+              src={iconSrc}
+              alt={''}
+              w={'100%'}
+              maxH={'80vh'}
+              referrerPolicy="no-referrer"
+              fallbackSrc={'/imgs/errImg.png'}
+              fallbackStrategy={'onError'}
+              objectFit={'contain'}
+              onWheel={handleWheel}
+            />
+          </ModalContent>
+          <ModalCloseButton bg={'myWhite.500'} zIndex={999999} />
+        </Modal>
       </ModalContent>
     </Modal>
   );

@@ -461,6 +461,16 @@
       "retry": "Retry",
       "tts": {
         "Stop Speech": "Stop"
+      },
+      "ocr": {
+        "Modal Title": "OCR Identify Make Question",
+        "OCR Text": "OCR Text",
+        "OCR Text Placeholder": "The text identified by OCR technology will be placed here. You can manually edit and modify it. After confirming that the modification has been completed, click the [generate question] button, and let us generate a reasonable question for you to use in the following conversation.",
+        "LLM Question With OCR Text": "Your Question",
+        "LLM Question With OCR Text Placeholder": "According to the text identified by OCR technology above to generate a reasonable question for the following dialogue, you can manually edit and modify the generated question. After confirming the integrity of the question, you can click [OK] to continue the conversation.",
+        "Generate Question": "Generate Question",
+        "Tips Question Empty": "Please enter your question",
+        "Tips OCR Text Empty": "OCR recognition text content cannot be empty"
       }
     },
     "common": {

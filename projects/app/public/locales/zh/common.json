@@ -461,6 +461,16 @@
       "retry": "重新生成",
       "tts": {
         "Stop Speech": "停止"
+      },
+      "ocr": {
+        "Modal Title": "OCR识别生成问题",
+        "OCR Text": "OCR文本",
+        "OCR Text Placeholder": "通过OCR技术识别出的文本会放置在这里，您可以手动编辑修改，确认已经修改完成后，点击【生成问题】按钮，让我们为您生成一个合理的问题用于接下来的对话当中。",
+        "LLM Question With OCR Text": "您的问题",
+        "LLM Question With OCR Text Placeholder": "根据上面通过OCR技术识别出的文本来生成一个合理的问题用于接下来的对话，您可以手动编辑修改生成的问题，确认问题完整后，您可以点击【确认】继续对话。",
+        "Generate Question": "一键生成问题",
+        "Tips Question Empty": "请输入您的问题",
+        "Tips OCR Text Empty": "OCR识别文本内容不能为空"
       }
     },
     "common": {
@@ -543,8 +553,7 @@
             "success": "开始同步"
           }
         },
-        "training": {
-        }
+        "training": {}
       },
       "data": {
         "Auxiliary Data": "辅助数据",
