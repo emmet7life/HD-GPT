@@ -77,15 +77,17 @@ export const compressBase64ImgAndUpload = async ({
 
 export const compressImgFileAndUpload = async ({
   file,
+  base64ImgData,
   ...props
 }: preUploadImgProps &
   CompressImgProps & {
     file: File;
+    base64ImgData?: string;// 外部可传入自定义的base64图片数据
   }) => {
   const reader = new FileReader();
   reader.readAsDataURL(file);
 
-  const base64Img = await new Promise<string>((resolve, reject) => {
+  const base64Img = base64ImgData ?? (await new Promise<string>((resolve, reject) => {
     reader.onload = async () => {
       resolve(reader.result as string);
     };
@@ -93,7 +95,7 @@ export const compressImgFileAndUpload = async ({
       console.log(err);
       reject('Load image error');
     };
-  });
+  }));
 
   return compressBase64ImgAndUpload({
     base64Img,

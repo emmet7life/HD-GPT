@@ -470,7 +470,8 @@
         "LLM Question With OCR Text Placeholder": "根据上面通过OCR技术识别出的文本来生成一个合理的问题用于接下来的对话，您可以手动编辑修改生成的问题，确认问题完整后，您可以点击【确认】继续对话。",
         "Generate Question": "一键生成问题",
         "Tips Question Empty": "请输入您的问题",
-        "Tips OCR Text Empty": "OCR识别文本内容不能为空"
+        "Tips OCR Text Empty": "OCR识别文本内容不能为空",
+        "Crop Image": "裁剪"
       }
     },
     "common": {

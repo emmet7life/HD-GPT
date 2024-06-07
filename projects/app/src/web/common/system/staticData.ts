@@ -17,7 +17,13 @@ import type {
 export let feConfigs: FastGPTFeConfigsType = {};
 export let systemVersion = '0.0.0';
 
-export let ocrModel: BaseModelType;
+export let ocrModel: BaseModelType = {
+  model: "",
+  apiKey: "",
+  apiUrl: "",
+  apiBaseUrl: "",
+  apiPath: ""
+};
 export let chatModelList: ChatModelItemType[] = [];
 export let vectorModelList: VectorModelItemType[] = [];
 export let qaModelList: LLMModelItemType[] = [];

@@ -1,6 +1,11 @@
 import { useSpeech } from '@/web/common/hooks/useSpeech';
 import { useSystemStore } from '@/web/common/system/useSystemStore';
-import { Box, Flex, Image, Spinner, Textarea } from '@chakra-ui/react';
+import {
+  Box, Flex, Image as ChakraImage, Spinner, Textarea, Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalCloseButton, useDisclosure, Button
+} from '@chakra-ui/react';
 import React, { useRef, useEffect, useCallback, useState, useTransition } from 'react';
 import { useTranslation } from 'next-i18next';
 import MyTooltip from '../MyTooltip';
@@ -17,6 +22,7 @@ import { postOcrQuestion } from '@/web/core/ai/api';
 import { postOcrRequest } from '@/web/core/ai/api';
 import { ocrModel } from '@/web/common/system/staticData';
 import { useEditOcrQuestion } from '@/web/common/hooks/useEditOcrQuestion';
+import Cropper, { Area } from 'react-easy-crop'
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
 
 enum FileTypeEnum {
@@ -76,6 +82,175 @@ const MessageInput = ({
   const [ocrQuestion, setOcrQuestion] = useState<string>('');
   const [ocrImageSrc, setOcrImageSrc] = useState<string>('');
 
+  // 图片裁剪
+  // const [originChoosedFile, setOriginChoosedFile] = useState<FileItemType>();
+  const [base64ImageData, setBase64ImageData] = useState<string>("");
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedArea, setCroppedArea] = useState<Area>();
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area>();
+  const [rotation, setRotation] = useState(0);
+  const [cropSize, setCropSize] = useState({ width: 0, height: 0 });
+  const [mediaSize, setMediaSize] = useState({
+    width: 0,
+    height: 0,
+    naturalWidth: 0,
+    naturalHeight: 0,
+  })
+  const onCropComplete = useCallback(
+    (croppedArea: Area, croppedAreaPixels: Area) => {
+      console.log("onCropComplete croppedArea", croppedArea);
+      console.log("onCropComplete croppedAreaPixels", croppedAreaPixels);
+      setCroppedArea(croppedArea);
+      setCroppedAreaPixels(croppedAreaPixels);
+    },
+    [base64ImageData]
+  );
+
+  const onCropImage = useCallback(async () => {
+    try {
+      console.log("onCropImage", croppedAreaPixels);
+      if (croppedAreaPixels) {
+        const croppedImage = await getCroppedImg(
+          {
+            imageSrc: base64ImageData,
+            pixelCrop: croppedAreaPixels,
+            rotation,
+            flip: { horizontal: false, vertical: false }
+          }
+        );
+        console.log('onCropImage croppedImage', { croppedImage })
+        if (croppedImage) {
+          setBase64ImageData(croppedImage);
+          const images = fileList.filter((item) => item.type === FileTypeEnum.image);
+          if (images && images.length > 0) {
+            const file = images[0];
+            uploadFile({ ...file, ...{ base64ImgData: croppedImage } });
+          }
+        }
+      }
+
+    } catch (e) {
+      console.error(e)
+    }
+  }, [croppedAreaPixels, base64ImageData, rotation, fileList]);
+
+  const {
+    isOpen: isCropImageModalOpen,
+    onOpen: OnCropImageModalOpen,
+    onClose: onCropImageModalClose
+  } = useDisclosure();
+
+  const onCropImageModalClosed = () => {
+    setFileList([]);
+    setFileUploading(false);
+    setBase64ImageData("");
+    setCroppedArea(undefined);
+    setCroppedAreaPixels(undefined);
+    setRotation(0);
+    onCropImageModalClose();
+  };
+
+  const createImage = useCallback((url: string): Promise<CanvasImageSource & { width: number; height: number; }> => {
+    return new Promise((resolve, reject) => {
+      const image = new Image()
+      image.addEventListener('load', () => resolve(image))
+      image.addEventListener('error', (error) => reject(error))
+      image.setAttribute('crossOrigin', 'anonymous') // needed to avoid cross-origin issues on CodeSandbox
+      image.src = url
+    })
+  }, []);
+
+  const getRadianAngle = useCallback((degreeValue: number) => {
+    return (degreeValue * Math.PI) / 180;
+  }, []);
+
+  const rotateSize = useCallback((width: number, height: number, rotation: number): { width: number, height: number } => {
+    const rotRad = getRadianAngle(rotation);
+
+    return {
+      width:
+        Math.abs(Math.cos(rotRad) * width) + Math.abs(Math.sin(rotRad) * height),
+      height:
+        Math.abs(Math.sin(rotRad) * width) + Math.abs(Math.cos(rotRad) * height),
+    }
+  }, []);
+
+  const getCroppedImg = useCallback(async ({
+    imageSrc,
+    pixelCrop,
+    rotation = 0,
+    flip = { horizontal: false, vertical: false } }: {
+      imageSrc: string;
+      pixelCrop: Area;
+      rotation: number;
+      flip: { horizontal: boolean, vertical: boolean }
+    }): Promise<string | null> => {
+    const image = await createImage(imageSrc)
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    if (!ctx) {
+      return null
+    }
+
+    const rotRad = getRadianAngle(rotation)
+
+    // calculate bounding box of the rotated image
+    const { width: bBoxWidth, height: bBoxHeight } = rotateSize(
+      image.width,
+      image.height,
+      rotation
+    )
+
+    // set canvas size to match the bounding box
+    canvas.width = bBoxWidth
+    canvas.height = bBoxHeight
+
+    // translate canvas context to a central location to allow rotating and flipping around the center
+    ctx.translate(bBoxWidth / 2, bBoxHeight / 2)
+    ctx.rotate(rotRad)
+    ctx.scale(flip.horizontal ? -1 : 1, flip.vertical ? -1 : 1)
+    ctx.translate(-image.width / 2, -image.height / 2)
+
+    // draw rotated image
+    ctx.drawImage(image, 0, 0)
+
+    const croppedCanvas = document.createElement('canvas')
+
+    const croppedCtx = croppedCanvas.getContext('2d')
+
+    if (!croppedCtx) {
+      return null
+    }
+
+    // Set the size of the cropped canvas
+    croppedCanvas.width = pixelCrop.width
+    croppedCanvas.height = pixelCrop.height
+
+    // Draw the cropped image onto the new canvas
+    croppedCtx.drawImage(
+      canvas,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    )
+
+    // As Base64 string
+    return croppedCanvas.toDataURL('image/jpeg');
+    // As a blob
+    // return new Promise((resolve, reject) => {
+    //   croppedCanvas.toBlob((file) => {
+    //     resolve(URL.createObjectURL(file))
+    //   }, 'image/png')
+    // })
+  }, []);
+
   const { onOpenModal, EditModal: EditOcrQuestionModal } = useEditOcrQuestion({
     ocrText: ocrText,
     ocrQuestion: ocrQuestion,
@@ -85,31 +260,32 @@ const MessageInput = ({
 
   const { File, onOpen: onOpenSelectFile } = useSelectFile({
     fileType: 'image/*',
-    multiple: true,
-    maxCount: 10
+    multiple: false,
+    maxCount: 1
   });
 
   const { mutate: uploadFile } = useRequest({
-    mutationFn: async (file: FileItemType) => {
+    mutationFn: async (file: FileItemType & { base64ImgData?: string; }) => {
       if (file.type === FileTypeEnum.image) {
         try {
           const src = await compressImgFileAndUpload({
             type: MongoImageTypeEnum.chatImage,
             file: file.rawFile,
+            base64ImgData: file.base64ImgData,
             maxW: 4329,
             maxH: 4329,
-            maxSize: 1024 * 1024 * 5,
+            maxSize: 1024 * 1024 * 20,// 20M
             // 30 day expired.
-            expiredTime: addDays(new Date(), 9999999),
+            expiredTime: addDays(new Date(), 99999999),
             shareId
           });
           setFileList((state) =>
             state.map((item) =>
               item.id === file.id
                 ? {
-                    ...item,
-                    src: `${location.origin}${src}`
-                  }
+                  ...item,
+                  src: `${location.origin}${src}`
+                }
                 : item
             )
           );
@@ -204,7 +380,12 @@ const MessageInput = ({
                   name: file.name,
                   icon: reader.result as string
                 };
-                uploadFile(item);
+                console.log("onSelectFile loadFiles item", item);
+                // uploadFile(item);
+                OnCropImageModalOpen();
+                // setOriginChoosedFile(item);
+                setBase64ImageData(item.icon);
+                setFileUploading(false);
                 resolve(item);
               };
               reader.onerror = () => {
@@ -262,6 +443,7 @@ const MessageInput = ({
             setOcrText('');
             setOcrQuestion('');
             setOcrImageSrc(imgSrc);
+            onCropImageModalClosed();
 
             onOpenModal({
               defaultVal: imgSrc,
@@ -348,9 +530,9 @@ const MessageInput = ({
       {...(isPc
         ? {}
         : {
-            boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`,
-            bg: 'white'
-          })}
+          boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`,
+          bg: 'white'
+        })}
       pb={[`${_safeAreaBottom || 0}px`, '0px']}
       w={'100%'}
       maxW={['auto', 'min(800px, 100%)']}
@@ -359,8 +541,8 @@ const MessageInput = ({
       <Box
         {...(isPc
           ? {
-              boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`
-            }
+            boxShadow: isSpeaking ? `0 0 10px rgba(54,111,255,0.4)` : `0 0 10px rgba(0,0,0,0.2)`
+          }
           : {})}
         pt={fileList.length > 0 ? '10px' : ['14px', '18px']}
         pb={['6px', '18px']}
@@ -370,13 +552,13 @@ const MessageInput = ({
         overflow={'hidden'}
         {...(isPc
           ? {
-              border: '1px solid',
-              borderColor: 'rgba(0,0,0,0.12)'
-            }
+            border: '1px solid',
+            borderColor: 'rgba(0,0,0,0.12)'
+          }
           : {
-              borderTop: '1px solid',
-              borderTopColor: 'rgba(0,0,0,0.15)'
-            })}
+            borderTop: '1px solid',
+            borderTopColor: 'rgba(0,0,0,0.15)'
+          })}
       >
         {/* translate loading */}
         <Flex
@@ -445,7 +627,7 @@ const MessageInput = ({
                 display={['', 'none']}
               />
               {item.type === FileTypeEnum.image && (
-                <Image
+                <ChakraImage
                   alt={'img'}
                   src={item.icon}
                   w={['50px', '70px']}
@@ -495,17 +677,17 @@ const MessageInput = ({
             pr={['3px', '3px']}
             {...(isPc
               ? {
-                  border: 'none',
-                  _focusVisible: {
-                    border: 'none'
-                  }
+                border: 'none',
+                _focusVisible: {
+                  border: 'none'
                 }
+              }
               : {
-                  border: '1px solid rgba(212, 212, 212, 1.0)',
-                  _focusVisible: {
-                    border: '1px solid #20599b'
-                  }
-                })}
+                border: '1px solid rgba(212, 212, 212, 1.0)',
+                _focusVisible: {
+                  border: '1px solid #20599b'
+                }
+              })}
             placeholder={isSpeaking ? t('core.chat.Speaking') : t('core.chat.Type a message')}
             resize={'none'}
             overflow={'auto'}
@@ -662,6 +844,33 @@ const MessageInput = ({
           isQuestionMaking={isQuestionMaking}
           onMakeLLMQuestion={onMakeLLMQuestion}
         />
+
+        <Modal isOpen={isCropImageModalOpen} onClose={onCropImageModalClosed} isCentered>
+          <ModalOverlay />
+          <ModalContent w={"100%"} h={"100%"} boxShadow={'none'} bg={'transparent'}>
+            <Box position={"absolute"} top={0} left={0} right={0} bottom={0} w={"100%"} >
+              <Cropper
+                image={base64ImageData}
+                crop={crop}
+                zoom={zoom}
+                rotation={rotation}
+                // aspect={4 / 3}
+                onRotationChange={setRotation}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+                setMediaSize={setMediaSize}
+                setCropSize={setCropSize}
+              />
+              <Box position={"absolute"} left={0} bottom={12} w={"100%"} padding={4}>
+                <Button mr={3} variant={'primary'} w={"100%"} onClick={onCropImage}>
+                  {t('core.chat.ocr.Crop Image')}
+                </Button>
+              </Box>
+            </Box>
+          </ModalContent>
+          <ModalCloseButton bg={'myWhite.500'} zIndex={999999} />
+        </Modal>
       </Box>
     </Box>
   );
