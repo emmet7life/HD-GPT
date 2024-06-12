@@ -15,4 +15,4 @@ export const postOcrQuestion = (data: CreateOcrQuestionParams) =>
   POST<string>('/core/ai/agent/ocrRequest', data);
 
 export const postOcrRequest = (data: CreateOcrRequestParams) =>
-  POST<OcrRequestResult>(data.apiPath, { url: data.imageUrl }, { baseURL: data.apiBaseUrl });
+  POST<OcrRequestResult>(data.apiPath, { image_url: data.imageUrl }, { baseURL: data.apiBaseUrl });

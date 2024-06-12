@@ -99,8 +99,8 @@ const MessageInput = ({
   })
   const onCropComplete = useCallback(
     (croppedArea: Area, croppedAreaPixels: Area) => {
-      console.log("onCropComplete croppedArea", croppedArea);
-      console.log("onCropComplete croppedAreaPixels", croppedAreaPixels);
+      // console.log("onCropComplete croppedArea", croppedArea);
+      // console.log("onCropComplete croppedAreaPixels", croppedAreaPixels);
       setCroppedArea(croppedArea);
       setCroppedAreaPixels(croppedAreaPixels);
     },
@@ -109,7 +109,7 @@ const MessageInput = ({
 
   const onCropImage = useCallback(async () => {
     try {
-      console.log("onCropImage", croppedAreaPixels);
+      // console.log("onCropImage", croppedAreaPixels);
       if (croppedAreaPixels) {
         const croppedImage = await getCroppedImg(
           {
@@ -119,7 +119,7 @@ const MessageInput = ({
             flip: { horizontal: false, vertical: false }
           }
         );
-        console.log('onCropImage croppedImage', { croppedImage })
+        // console.log('onCropImage croppedImage', { croppedImage })
         if (croppedImage) {
           setBase64ImageData(croppedImage);
           const images = fileList.filter((item) => item.type === FileTypeEnum.image);
@@ -323,19 +323,27 @@ const MessageInput = ({
     }
   }, [textareaMinH]);
 
-  const onMakeLLMQuestion = useCallback(async (ocrText: string) => {
+  const onMakeLLMQuestion = useCallback(async (ocrImageSrc: string) => {
     var finalQuestion = '';
     try {
       setIsQuestionMaking(true);
-      if (ocrText) {
-        const question = await postOcrQuestion({ message: ocrText, shareId: '' });
-        console.log('OCR:', question);
-        finalQuestion = question;
+      // console.log('onMakeLLMQuestion ocrImageSrc:', ocrImageSrc);
+      if (ocrImageSrc) {
+        // const question = await postOcrQuestion({ message: ocrText, shareId: '' });
+        // console.log('ocrModel:', ocrModel);
+        const result = await postOcrRequest({
+          imageUrl: ocrImageSrc,
+          apiBaseUrl: ocrModel.apiBaseUrl,
+          apiPath: ocrModel.apiPath
+        });
+        // console.log('OCR:', result);
+        finalQuestion = result.content;
         // 更新内容
         // setOcrQuestion(question);
-      } else {
-        // 处理 OCR 文本为空的情况
       }
+      //  else {
+      // 处理 OCR 文本为空的情况
+      // }
     } catch (error) {
       console.log('Error making question:', error);
     } finally {

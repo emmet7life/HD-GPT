@@ -40,6 +40,7 @@ export const useEditOcrQuestion = ({
   const onSuccessCb = useRef<(content: string) => void | Promise<void>>();
   const onErrorCb = useRef<(err: any) => void>();
   const { toast } = useToast();
+  const defaultValue = useRef("");
   const ocrTextDomRef = useRef<HTMLTextAreaElement | null>(null);
   const ocrQuestionDomRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -70,18 +71,21 @@ export const useEditOcrQuestion = ({
       onError?: (err: any) => void;
     }) => {
       onOpen();
+      defaultValue.current = replaceHostAndPort(defaultVal, 'https://hd.hdmicrowave.com');
       onSuccessCb.current = onSuccess;
       onErrorCb.current = onError;
 
-      const result = await postOcrRequest({
-        imageUrl: replaceHostAndPort(defaultVal, 'https://hd.hdmicrowave.com'),
-        apiBaseUrl: ocrModel.apiBaseUrl,
-        apiPath: ocrModel.apiPath
-      });
-      console.log('PROGRESS ocrRequest postOcrRequest OCR:', result);
-      if (ocrTextDomRef.current) {
-        ocrTextDomRef.current.value = result.content;
-      }
+      onPrepareMakeLLMQuestion();
+
+      // const result = await postOcrRequest({
+      //   imageUrl: defaultValue.current,
+      //   apiBaseUrl: ocrModel.apiBaseUrl,
+      //   apiPath: ocrModel.apiPath
+      // });
+      // console.log('PROGRESS ocrRequest postOcrRequest OCR:', result);
+      // if (ocrQuestionDomRef.current) {
+      //   ocrQuestionDomRef.current.value = result.content;
+      // }
     },
     [onOpen]
   );
@@ -120,28 +124,23 @@ export const useEditOcrQuestion = ({
 
   const onPrepareMakeLLMQuestion = useCallback(async () => {
     try {
-      const ocrContent = ocrTextDomRef.current?.value || '';
-      if (ocrContent) {
-        if (onMakeLLQuestionCb.current) {
-          const result = await onMakeLLQuestionCb.current(ocrContent);
-          // setIsQuestionMaking(true);
-          // const result = await postOcrQuestion({ message: ocrContent, shareId: shareId });
-          console.log('useEditOcrQuestion.tsx >> onMakeLLMQuestion OCR:', result);
-          if (ocrQuestionDomRef.current && result) {
-            ocrQuestionDomRef.current.value = result;
-          }
-          // setIsQuestionMaking(false);
+      const ocrImageSrc = defaultValue.current;
+      if (ocrImageSrc && onMakeLLQuestionCb.current) {
+        const question = await onMakeLLQuestionCb.current(ocrImageSrc);
+        // const question = await postOcrQuestion({ message: ocrContent, shareId: shareId });
+        // console.log('useEditOcrQuestion.tsx >> onMakeLLMQuestion OCR:', result);
+        if (ocrQuestionDomRef.current && question) {
+          ocrQuestionDomRef.current.value = question;
         }
       } else {
-        ocrTextDomRef.current?.focus();
+        ocrQuestionDomRef.current?.focus();
         toast({
           status: 'warning',
-          title: t('core.chat.ocr.Tips OCR Text Empty')
+          title: t('core.chat.ocr.Tips OCR Image Src Error')
         });
       }
     } catch (error) {
       console.log('onMakeLLMQuestion catch error', error);
-      // setIsQuestionMaking(false);
     }
   }, []);
 
@@ -175,7 +174,7 @@ export const useEditOcrQuestion = ({
               </Box>
             )}
 
-            <Box mt={0} mb={1}>
+            {/* <Box mt={0} mb={1}>
               {t('core.chat.ocr.OCR Text')}
             </Box>
 
@@ -185,7 +184,7 @@ export const useEditOcrQuestion = ({
               maxLength={500}
               placeholder={t('core.chat.ocr.OCR Text Placeholder')}
               bg={'myWhite.600'}
-            />
+            /> */}
 
             <Box
               mt={2}
