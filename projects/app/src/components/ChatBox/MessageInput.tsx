@@ -4,7 +4,7 @@ import {
   Box, Flex, Image as ChakraImage, Spinner, Textarea, Modal,
   ModalOverlay,
   ModalContent,
-  ModalCloseButton, useDisclosure, Button
+  ModalCloseButton, useDisclosure, Button, Center
 } from '@chakra-ui/react';
 import React, { useRef, useEffect, useCallback, useState, useTransition } from 'react';
 import { useTranslation } from 'next-i18next';
@@ -22,7 +22,10 @@ import { postOcrQuestion } from '@/web/core/ai/api';
 import { postOcrRequest } from '@/web/core/ai/api';
 import { ocrModel } from '@/web/common/system/staticData';
 import { useEditOcrQuestion } from '@/web/common/hooks/useEditOcrQuestion';
-import Cropper, { Area } from 'react-easy-crop'
+import { Area } from 'react-easy-crop'// Cropper, 
+import Cropper, { ReactCropperElement } from "react-cropper";
+import "cropperjs/dist/cropper.css";
+import MySlider from '@/components/Slider';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
 
 enum FileTypeEnum {
@@ -83,8 +86,12 @@ const MessageInput = ({
   const [ocrImageSrc, setOcrImageSrc] = useState<string>('');
 
   // 图片裁剪
+  const [cropData, setCropData] = useState("#");
+  const cropperRef = useRef<ReactCropperElement | null>(null);
   // const [originChoosedFile, setOriginChoosedFile] = useState<FileItemType>();
   const [base64ImageData, setBase64ImageData] = useState<string>("");
+  const [cropImageRotate, setCropImageRotate] = useState<number>(0);
+  const [isImageCropping, setIsImageCropping] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedArea, setCroppedArea] = useState<Area>();
@@ -134,6 +141,40 @@ const MessageInput = ({
       console.error(e)
     }
   }, [croppedAreaPixels, base64ImageData, rotation, fileList]);
+
+  const onCropImage2 = useCallback(async () => {
+    try {
+      // console.log("onCropImage", croppedAreaPixels);
+      setIsImageCropping(true);
+      const data = getCropData();
+      if (data) {
+        setBase64ImageData(data);
+        const images = fileList.filter((item) => item.type === FileTypeEnum.image);
+        if (images && images.length > 0) {
+          const file = images[0];
+          uploadFile({ ...file, ...{ base64ImgData: data } });
+        }
+      }
+    } catch (e) {
+      console.error(e)
+      setIsImageCropping(false);
+      setCropImageRotate(0);
+    }
+  }, [croppedAreaPixels, base64ImageData, rotation, fileList, cropperRef]);
+
+  useEffect(() => {
+    if (cropperRef.current) {
+      cropperRef.current.cropper.rotateTo(cropImageRotate);
+    }
+  }, [cropImageRotate]);
+
+  const getCropData = useCallback(() => {
+    if (typeof cropperRef.current?.cropper !== 'undefined') {
+      const cropper = cropperRef.current?.cropper;
+      // setCropData(cropper.getCroppedCanvas().toDataURL());
+      return cropper.getCroppedCanvas().toDataURL();
+    }
+  }, [cropperRef, cropData]);
 
   const {
     isOpen: isCropImageModalOpen,
@@ -290,14 +331,20 @@ const MessageInput = ({
             )
           );
           setFileUploading(false);
+          setIsImageCropping(false);
+          setCropImageRotate(0);
         } catch (error) {
           setFileList((state) => state.filter((item) => item.id !== file.id));
           console.log(error);
           setFileUploading(false);
+          setIsImageCropping(false);
+          setCropImageRotate(0);
           return Promise.reject(error);
         }
       } else {
         setFileUploading(false);
+        setIsImageCropping(false);
+        setCropImageRotate(0);
       }
     },
     errorToast: t('common.Upload File Failed')
@@ -853,11 +900,20 @@ const MessageInput = ({
           onMakeLLMQuestion={onMakeLLMQuestion}
         />
 
+        {isImageCropping && (
+          <Center position="fixed" top={0} left={0} right={0} bottom={0} bg="rgba(255,255,255,0.8)" color={'primary.main'} zIndex={9999999}>
+            <Spinner size="xl" />
+            <Box flex={'0 0 auto'} ml={[4, 4]} color={"primary.main"}>
+              {t('core.chat.ocr.Crop Image Uploading')}
+            </Box>
+          </Center>
+        )}
+
         <Modal isOpen={isCropImageModalOpen} onClose={onCropImageModalClosed} isCentered>
           <ModalOverlay />
           <ModalContent w={"100%"} h={"100%"} boxShadow={'none'} bg={'transparent'}>
             <Box position={"absolute"} top={0} left={0} right={0} bottom={0} w={"100%"} >
-              <Cropper
+              {/* <Cropper
                 image={base64ImageData}
                 crop={crop}
                 zoom={zoom}
@@ -869,9 +925,44 @@ const MessageInput = ({
                 onZoomChange={setZoom}
                 setMediaSize={setMediaSize}
                 setCropSize={setCropSize}
+              /> */}
+              <Cropper
+                style={{ height: "100%", width: '100%' }}
+                initialAspectRatio={16 / 9}
+                guides={true}
+                rotatable={true}
+                rotateTo={cropImageRotate}
+                src={base64ImageData}
+                ref={cropperRef}
+                dragMode={'move'}
+                minCropBoxHeight={10}
+                minCropBoxWidth={10}
+                checkOrientation={true} // https://github.com/fengyuanchen/cropperjs/issues/671
               />
-              <Box position={"absolute"} left={0} bottom={12} w={"100%"} padding={4}>
-                <Button mr={3} variant={'primary'} w={"100%"} onClick={onCropImage}>
+              <Box position={"absolute"} left={0} bottom={6} w={"100%"} padding={4}>
+                <Box display={['block', 'flex']} py={0}>
+                  <Box flex={1} mx={4}>
+                    <Box color={"white"} display="flex"
+                      mb={6}
+                      justifyContent="center"
+                      alignItems="center">
+                      {t('core.chat.ocr.Crop Rotate Angle')}
+                    </Box>
+                    <MySlider
+                      min={0}
+                      max={360}
+                      step={1}
+                      value={cropImageRotate}
+                      onChange={(val) => {
+                        // console.log("MySlider onChange val", val);
+                        setCropImageRotate(val);
+                      }}
+                    />
+                  </Box>
+                </Box>
+                <Box height={6} />
+
+                <Button variant={'primaryMainReverse'} w={"100%"} onClick={onCropImage2}>
                   {t('core.chat.ocr.Crop Image')}
                 </Button>
               </Box>

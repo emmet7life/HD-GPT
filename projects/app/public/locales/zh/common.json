@@ -472,7 +472,9 @@
         "Tips Question Empty": "请输入您的问题",
         "Tips OCR Text Empty": "OCR识别文本内容不能为空",
         "Tips OCR Image Src Error": "OCR源图上传失败，请关闭当前窗口重新上传",
-        "Crop Image": "裁剪"
+        "Crop Image": "裁剪",
+        "Crop Rotate Angle": "旋转角度",
+        "Crop Image Uploading": "图片上传中..."
       }
     },
     "common": {

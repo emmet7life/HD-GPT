@@ -472,7 +472,9 @@
         "Tips Question Empty": "Please enter your question",
         "Tips OCR Text Empty": "OCR recognition text content cannot be empty",
         "Tips OCR Image Src Error": "Failed to upload OCR source image. Please close the current modal pop window and upload again.",
-        "Crop Image": "Crop Image"
+        "Crop Image": "Crop Image",
+        "Crop Rotate Angle": "Rotate Angle",
+        "Crop Image Uploading": "Image Uploading..."
       }
     },
     "common": {

@@ -201,6 +201,25 @@ const Button = defineStyleConfig({
         bg: 'white !important'
       }
     },
+    primaryMainReverse: {
+      color: 'white',
+      border: '1px solid',
+      borderColor: 'primary.main',
+      bg: 'primary.main',
+      transition: 'background 0.1s',
+      boxShadow: '1',
+      _hover: {
+        color: 'primary.whiteDark',
+        bg: 'primary.mainReverse'
+      },
+      _active: {
+        color: 'primary.whiteDark',
+        bg: 'primary.mainReverse'
+      },
+      _disabled: {
+        bg: 'white !important'
+      }
+    },
     primaryGray: {
       color: 'myGray.500',
       border: '1px solid',
@@ -438,7 +457,9 @@ export const theme = extendTheme({
       humanGradient: 'linear-gradient(to bottom right, #20599b 0%, #4584cc 100%)',
 
       main: '#20599b',
-      coral: '#FF7F50'
+      mainReverse: '#21528a',
+      coral: '#FF7F50',
+      whiteDark: '#f3f3f3'
     },
     red: {
       1: 'rgba(217,45,32,0.1)',
