@@ -313,9 +313,9 @@ const MessageInput = ({
             type: MongoImageTypeEnum.chatImage,
             file: file.rawFile,
             base64ImgData: file.base64ImgData,
-            maxW: 4329,
-            maxH: 4329,
-            maxSize: 1024 * 1024 * 20,// 20M
+            maxW: 1080,
+            maxH: 1080,
+            maxSize: 1024 * 1024 * 10,// 10M
             // 30 day expired.
             expiredTime: addDays(new Date(), 99999999),
             shareId

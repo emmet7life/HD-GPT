@@ -22,6 +22,8 @@ export const compressBase64Img = ({
       let width = img.width;
       let height = img.height;
 
+      console.log("compressBase64Img img width", width, ", height", height);
+
       if (width > height) {
         if (width > maxW) {
           height *= maxW / width;
@@ -39,14 +41,18 @@ export const compressBase64Img = ({
       canvas.height = height;
       const ctx = canvas.getContext('2d');
 
+      console.log("compressBase64Img drawImage width", width, ", height", height);
+
       if (!ctx) {
         return reject('压缩图片异常');
       }
 
       ctx.drawImage(img, 0, 0, width, height);
-      const compressedDataUrl = canvas.toDataURL(fileType, 1);
+      const compressedDataUrl = canvas.toDataURL(fileType, 0.8);
       // 移除 canvas 元素
       canvas.remove();
+
+      console.log("compressBase64Img compressedDataUrl length", compressedDataUrl.length, ", maxSize", maxSize);
 
       if (compressedDataUrl.length > maxSize) {
         return reject('图片太大了');

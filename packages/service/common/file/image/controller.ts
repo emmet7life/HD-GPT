@@ -6,7 +6,7 @@ export function getMongoImgUrl(id: string) {
   return `${imageBaseUrl}${id}`;
 }
 
-export const maxImgSize = 1024 * 1024 * 12;
+export const maxImgSize = 1024 * 1024 * 10;
 export async function uploadMongoImg({
   type,
   base64Img,
