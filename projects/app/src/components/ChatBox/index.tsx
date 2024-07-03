@@ -408,7 +408,7 @@ const ChatBox = (
         if (!isWxMiniProgramEnv.current) {
           // 如果值是false，则再检测一遍
           // @ts-ignore
-          isWxMiniProgramEnv.current = window.__wxjs_environment === 'miniprogram' || parent.window.__wxjs_environment === 'miniprogram';
+          isWxMiniProgramEnv.current = window.__wxjs_environment === 'miniprogram' || (parent && parent.window && parent.window.__wxjs_environment === 'miniprogram') ? true : false;
         }
 
         if (!directHandle && isWxMiniProgramEnv.current) {
@@ -723,7 +723,7 @@ const ChatBox = (
   const jweixinFileLoaded = useCallback(() => {
     console.log("jweixinFileLoaded >> window", window);
     // @ts-ignore
-    if (window.__wxjs_environment === 'miniprogram' || parent.window.__wxjs_environment === 'miniprogram') {
+    if (window.__wxjs_environment === 'miniprogram' || (parent && parent.window && parent.window.__wxjs_environment === 'miniprogram') ? true : false) {
       isWxMiniProgramEnv.current = true;
     } else {
       isWxMiniProgramEnv.current = false;
@@ -732,14 +732,24 @@ const ChatBox = (
 
   // add listener
   useEffect(() => {
-    const windowMessage = ({ data }: MessageEvent<{ type: 'sendPrompt'; text: string }>) => {
+    const windowMessage = (event: MessageEvent) => {
+      if (event.origin !== 'http://localhost:5173') {
+        console.log("ChatBox eventListener windowMessage 1 event", event);
+        return;
+      }
+
+      console.log("ChatBox eventListener windowMessage 2 event", event);
+
+      const { data }: MessageEvent<{ type: 'sendPrompt'; text: string }> = event;
       if (data?.type === 'sendPrompt' && data?.text) {
         sendPrompt({
           inputVal: data.text
         });
       }
+      console.log('ChatBox eventListener windowMessage Received message from parent:', event.data);
     };
     window.addEventListener('message', windowMessage);
+    console.log('ChatBox eventListener addEventListener');
 
     eventBus.on(EventNameEnum.sendQuestion, ({ text }: { text: string }) => {
       if (!text) return;
@@ -777,7 +787,11 @@ const ChatBox = (
         if (!window.WeixinJSBridge || !WeixinJSBridge.invoke) {
           console.log("WeixinJSBridge Not Ready");
           document.addEventListener('WeixinJSBridgeReady', jweixinFileLoaded, false);
-          parent.document.addEventListener('WeixinJSBridgeReady', jweixinFileLoaded, false);
+          try {
+            parent.document.addEventListener('WeixinJSBridgeReady', jweixinFileLoaded, false);
+          } catch (error) {
+            console.warn("WeixinJSBridge 跨域访问 error", error);
+          }
         } else {
           console.log("WeixinJSBridge is Ready");
           jweixinFileLoaded();

@@ -55,6 +55,7 @@ const OutLink = ({
   const searchParams = useSearchParams();
   const params = new URLSearchParams(searchParams);
   const avatarUrl = params.get('avatarUrl');
+  const accessToken = params.get('accessToken');
   const miniProgramUserId = params.get('miniProgramUserId') || undefined;// 微信小程序端传入的用户ID
   let safeAreaBottom = 0;
   if (params.get('safeAreaBottom')) {
@@ -62,10 +63,11 @@ const OutLink = ({
       safeAreaBottom = Number(params.get('safeAreaBottom'));
     } catch (error) { }
   }
-  console.log('OutLink >> searchParams', searchParams);
+  console.log('OutLink >> params searchParams', searchParams);
   console.log('OutLink >> params', params);
   console.log('OutLink >> params get miniProgramUserId', miniProgramUserId);
   console.log('OutLink >> params get avatarUrl', avatarUrl);
+  console.log('OutLink >> params get accessToken', accessToken);
   console.log('OutLink >> params get safeAreaBottom', safeAreaBottom);
 
   const {
