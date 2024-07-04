@@ -38,6 +38,7 @@ enum TabEnum {
 }
 
 const ChatHistorySlider = ({
+  accessToken,
   appId,
   appName,
   appAvatar,
@@ -48,8 +49,10 @@ const ChatHistorySlider = ({
   onClearHistory,
   onSetHistoryTop,
   onSetCustomTitle,
-  onClose
+  onClose,
+  onLogout
 }: {
+  accessToken?: string;
   appId?: string;
   appName: string;
   appAvatar: string;
@@ -61,6 +64,7 @@ const ChatHistorySlider = ({
   onSetHistoryTop?: (e: { chatId: string; top: boolean }) => void;
   onSetCustomTitle?: (e: { chatId: string; title: string }) => void;
   onClose: () => void;
+  onLogout?: () => void;
 }) => {
   const theme = useTheme();
   const router = useRouter();
@@ -205,14 +209,14 @@ const ChatHistorySlider = ({
                 bg={item.top ? '#E6F6F6 !important' : ''}
                 {...(item.id === activeChatId
                   ? {
-                      backgroundColor: 'primary.50 !important',
-                      color: 'primary.main'
-                    }
+                    backgroundColor: 'primary.50 !important',
+                    color: 'primary.main'
+                  }
                   : {
-                      onClick: () => {
-                        onChangeChat(item.id);
-                      }
-                    })}
+                    onClick: () => {
+                      onChangeChat(item.id);
+                    }
+                  })}
               >
                 <MyIcon
                   name={item.id === activeChatId ? 'core/chat/chatFill' : 'core/chat/chatLight'}
@@ -297,19 +301,19 @@ const ChatHistorySlider = ({
                 alignItems={'center'}
                 {...(item._id === appId
                   ? {
-                      backgroundColor: 'primary.50 !important',
-                      color: 'primary.600'
-                    }
+                    backgroundColor: 'primary.50 !important',
+                    color: 'primary.600'
+                  }
                   : {
-                      onClick: () => {
-                        router.replace({
-                          query: {
-                            appId: item._id
-                          }
-                        });
-                        onClose();
-                      }
-                    })}
+                    onClick: () => {
+                      router.replace({
+                        query: {
+                          appId: item._id
+                        }
+                      });
+                      onClose();
+                    }
+                  })}
               >
                 <Avatar src={item.avatar} w={'24px'} placeholder={HUMAN_ICON} />
                 <Box ml={2} className={'textEllipsis'}>
@@ -321,14 +325,20 @@ const ChatHistorySlider = ({
         )}
       </Box>
 
-      {!isPc && appId && (
+      {((!isPc && appId) || (accessToken !== undefined && onLogout)) && (
         <Flex
           mt={2}
           borderTop={theme.borders.base}
           alignItems={'center'}
           cursor={'pointer'}
           p={3}
-          onClick={() => router.push('/app/list')}
+          onClick={() => {
+            if (accessToken !== undefined && onLogout) {
+              onLogout();
+            } else {
+              router.push('/app/list')
+            }
+          }}
         >
           <IconButton
             mr={3}
@@ -339,7 +349,7 @@ const ChatHistorySlider = ({
             borderRadius={'50%'}
             aria-label={''}
           />
-          {t('core.chat.Exit Chat')}
+          {accessToken !== undefined ? t('user.Logout') : t('core.chat.Exit Chat')}
         </Flex>
       )}
       <EditTitleModal />

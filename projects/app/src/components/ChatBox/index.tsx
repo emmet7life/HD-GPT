@@ -733,7 +733,15 @@ const ChatBox = (
   // add listener
   useEffect(() => {
     const windowMessage = (event: MessageEvent) => {
-      if (event.origin !== 'http://localhost:5173') {
+      // if (event.origin !== 'https://xiaoda.hdmicrowave.com'/*'http://localhost:5173'*/) {
+      //   console.log("ChatBox eventListener windowMessage 1 event", event);
+      //   return;
+      // }
+
+      // 使用正则匹配hdmicrowave.com下的所有子域名
+      const isProd = process.env.NODE_ENV === 'production';
+      const originRegex = isProd ? /^https:\/\/(?:[a-zA-Z0-9-]+\.)*hdmicrowave\.com$/ : /^http:\/\/localhost:5173$/;
+      if (!originRegex.test(event.origin)) {
         console.log("ChatBox eventListener windowMessage 1 event", event);
         return;
       }
@@ -748,6 +756,7 @@ const ChatBox = (
       }
       console.log('ChatBox eventListener windowMessage Received message from parent:', event.data);
     };
+    window.removeEventListener('message', windowMessage);
     window.addEventListener('message', windowMessage);
     console.log('ChatBox eventListener addEventListener');
 

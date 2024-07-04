@@ -14,6 +14,7 @@ interface ConfigType {
   cancelToken?: AbortController;
   maxQuantity?: number;
   baseURL?: string;
+  getCode?: boolean
 }
 interface ResponseDataType {
   code: number;
@@ -76,14 +77,15 @@ function responseSuccess(response: AxiosResponse<ResponseDataType>) {
 /**
  * 响应数据检查
  */
-function checkRes(data: ResponseDataType) {
+function checkRes(data: ResponseDataType, statusCode: number, getCode?: boolean) {
+  const code = data.code || statusCode;
   if (data === undefined) {
     console.log('error->', data, 'data is empty');
     return Promise.reject('服务器异常');
-  } else if (data.code < 200 || data.code >= 400) {
-    return Promise.reject(data);
+  } else if (code < 200 || code >= 400) {
+    return getCode ? Promise.reject({ code, data }) : Promise.reject(data);
   }
-  return data.data;
+  return getCode ? { code, data: data.data } : data.data;
 }
 
 /**
@@ -133,7 +135,7 @@ instance.interceptors.response.use(responseSuccess, (err) => Promise.reject(err)
 function request(
   url: string,
   data: any,
-  { cancelToken, maxQuantity, baseURL, ...config }: ConfigType,
+  { cancelToken, maxQuantity, baseURL, getCode, ...config }: ConfigType,
   method: Method
 ): any {
   /* 去空 */
@@ -155,7 +157,7 @@ function request(
       signal: cancelToken?.signal,
       ...config // 用户自定义配置，可以覆盖前面的配置
     })
-    .then((res) => checkRes(res.data))
+    .then((res) => checkRes(res.data, res.status, getCode))
     .catch((err) => responseError(err))
     .finally(() => requestFinish({ url }));
 }

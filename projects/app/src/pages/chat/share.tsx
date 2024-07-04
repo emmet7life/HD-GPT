@@ -1,36 +1,35 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import Head from 'next/head';
-import { useRouter } from 'next/router';
-import { Box, Flex, useDisclosure, Drawer, DrawerOverlay, DrawerContent } from '@chakra-ui/react';
-import { useToast } from '@/web/common/hooks/useToast';
-import { useSystemStore } from '@/web/common/system/useSystemStore';
-import { useQuery } from '@tanstack/react-query';
-import { streamFetch } from '@/web/common/api/fetch';
-import { useShareChatStore } from '@/web/core/chat/storeShareChat';
 import SideBar from '@/components/SideBar';
 import { gptMessage2ChatType } from '@/utils/adapt';
+import { streamFetch } from '@/web/common/api/fetch';
+import { useToast } from '@/web/common/hooks/useToast';
+import { useSystemStore } from '@/web/common/system/useSystemStore';
+import { useShareChatStore } from '@/web/core/chat/storeShareChat';
+import { Box, Drawer, DrawerContent, DrawerOverlay, Flex, useDisclosure } from '@chakra-ui/react';
 import { getErrText } from '@fastgpt/global/common/error/utils';
 import type { ChatHistoryItemType, ChatSiteItemType } from '@fastgpt/global/core/chat/type.d';
+import { useQuery } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
+import Head from 'next/head';
+import { useRouter } from 'next/router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 12);
 
 import ChatBox, { type ComponentRef, type StartChatFnProps } from '@/components/ChatBox';
 import PageContainer from '@/components/PageContainer';
+import MyBox from '@/components/common/MyBox';
+import { POST } from '@/web/common/api/request';
+import { serviceSideProps } from '@/web/common/utils/i18n';
+import { getInitOutLinkChatInfo } from '@/web/core/chat/api';
+import { useChatStore as useHDChatStore } from '@/web/core/chat/hd/storeChat';
+import { useChatStore } from '@/web/core/chat/storeChat';
+import { checkChatSupportSelectFileByChatModels } from '@/web/core/chat/utils';
+import { getChatPageGuideItems, xd_refreshToken } from '@/web/support/hd/api';
+import { ChatStatusEnum } from '@fastgpt/global/core/chat/constants';
+import { chatContentReplaceBlock } from '@fastgpt/global/core/chat/utils';
+import { useTranslation } from 'next-i18next';
+import { useSearchParams } from 'next/navigation';
 import ChatHeader from './components/ChatHeader';
 import ChatHistorySlider from './components/ChatHistorySlider';
-import { serviceSideProps } from '@/web/common/utils/i18n';
-import { checkChatSupportSelectFileByChatModels } from '@/web/core/chat/utils';
-import { useTranslation } from 'next-i18next';
-import { getInitOutLinkChatInfo } from '@/web/core/chat/api';
-import { POST } from '@/web/common/api/request';
-import { chatContentReplaceBlock } from '@fastgpt/global/core/chat/utils';
-import { useChatStore } from '@/web/core/chat/storeChat';
-import { ChatStatusEnum } from '@fastgpt/global/core/chat/constants';
-import MyBox from '@/components/common/MyBox';
-import { useSearchParams, useParams, usePathname } from 'next/navigation';
-import { getChatPageGuideItems } from '@/web/support/hd/api';
-import type { ChatBottomGuideItem } from '@fastgpt/global/core/hd/type.d';
-import { useChatStore as useHDChatStore } from '@/web/core/chat/hd/storeChat';
 
 const OutLink = ({
   shareId,
@@ -55,7 +54,7 @@ const OutLink = ({
   const searchParams = useSearchParams();
   const params = new URLSearchParams(searchParams);
   const avatarUrl = params.get('avatarUrl');
-  const accessToken = params.get('accessToken');
+  const accessToken = params.get('accessToken') || undefined;
   const miniProgramUserId = params.get('miniProgramUserId') || undefined;// 微信小程序端传入的用户ID
   let safeAreaBottom = 0;
   if (params.get('safeAreaBottom')) {
@@ -256,6 +255,90 @@ const OutLink = ({
   });
   console.log("getChatPageGuideItems data", data);
 
+  // const xd_refreshToken_wrapper = async (token: string) => {
+  //   try {
+  //     const response = await xd_refreshToken(token);
+  //     console.log("xd_refreshToken xd_refreshToken_wrapper response", response)
+  //     return response;
+  //   } catch (error) {
+
+  //   }
+  //   return null;
+  // }
+
+  if (accessToken) {
+    console.log("xd_refreshToken starting");
+    const token = accessToken;
+    const { isLoading, data: tokenData, error } = useQuery(["xd_refreshToken", token],
+      () => xd_refreshToken(token), {
+      onSuccess(data) {
+        console.log("xd_refreshToken onSuccess, data", data);
+      },
+      onError(err) {
+        console.log("xd_refreshToken onError, err", err);
+        // @ts-ignore
+        if (err && err.code === 401) {
+          setTimeout(() => {
+            // console.log('share.tsx window postMessage to http://localhost:5173');
+            // if (window !== top) {
+            //   window.top?.postMessage("Logout", "http://localhost:5173");
+            // } else {
+            //   window.postMessage("Logout", "http://localhost:5173");
+            // }
+            userLogout();
+          }, 2000);
+        }
+      },
+    });
+    console.log("xd_refreshToken end, isLoading", isLoading, ", tokenData", tokenData, ",error", error);
+  }
+
+  const userLogout = () => {
+    console.warn("share page userLogout method invoked");
+    const isProd = process.env.NODE_ENV === 'production';
+    const origin = isProd ? "https://xiaoda.hdmicrowave.com" : "http://localhost:5173";
+    console.warn("share page userLogout method invoked, origin", origin);
+    var step = 0;
+    if (window && window.top) {
+      console.warn("share page userLogout method invoked, window.top not NULL");
+      try {
+        window.top.postMessage("Logout", origin);
+        step += 1;
+        console.warn("share page userLogout method invoked, window.top not NULL, step 1");
+        window.top.location.replace(
+          "/login?action=logout"
+        );
+        console.warn("share page userLogout method invoked, window.top not NULL, step 2");
+      } catch (error) {
+        if (step <= 0) {
+          window.top?.location.replace(
+            "/login?action=logout"
+          );
+        }
+        console.warn("share page userLogout top window post replace route catch error", error);
+      }
+    } else {
+      try {
+        console.warn("share page userLogout method invoked, window.top is NULL");
+        window.postMessage("Logout", origin);
+        step += 1;
+        console.warn("share page userLogout method invoked, window.top is NULL, step 1");
+        window.location.replace(
+          "/login?action=logout"
+        );
+        console.warn("share page userLogout method invoked, window.top is NULL, step 2");
+      } catch (error) {
+        if (step <= 0) {
+          window.location.replace(
+            "/login?action=logout"
+          );
+        }
+        console.warn("share page userLogout window post replace route catch error", error);
+      }
+    }
+
+  }
+
   // load histories
   useQuery(['loadHistories', outLinkUid, shareId], () => {
     if (shareId && outLinkUid) {
@@ -330,6 +413,7 @@ const OutLink = ({
             );
           })(
             <ChatHistorySlider
+              accessToken={accessToken}
               appName={chatData.app.name}
               appAvatar={chatData.app.avatar}
               activeChatId={chatId}
@@ -380,6 +464,9 @@ const OutLink = ({
                   shareId,
                   outLinkUid
                 });
+              }}
+              onLogout={() => {
+                userLogout();
               }}
             />
           )
