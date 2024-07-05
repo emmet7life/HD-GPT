@@ -509,6 +509,7 @@ const OutLink = ({
               shareId={shareId}
               outLinkUid={outLinkUid}
               userId={miniProgramUserId}
+              accessToken={accessToken}
             />
           </Box>
         </Flex>

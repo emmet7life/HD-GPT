@@ -158,6 +158,7 @@ type Props = {
 
   // add params
   userId?: string;
+  accessToken?: string;
 
   onUpdateVariable?: (e: Record<string, any>) => void;
   onStartChat?: (e: StartChatFnProps) => Promise<{
@@ -184,6 +185,7 @@ const ChatBox = (
     shareId,
     outLinkUid,
     userId,
+    accessToken,
     safeAreaBottom = 0,
     onUpdateVariable,
     onStartChat,
@@ -411,7 +413,7 @@ const ChatBox = (
           isWxMiniProgramEnv.current = window.__wxjs_environment === 'miniprogram' || (parent && parent.window && parent.window.__wxjs_environment === 'miniprogram') ? true : false;
         }
 
-        if (!directHandle && isWxMiniProgramEnv.current) {
+        if (!directHandle && isWxMiniProgramEnv.current && !accessToken) {
           const humanServiceKeywords: string[] = [
             "转人工",
             "转接人工",
@@ -593,7 +595,8 @@ const ChatBox = (
 
         sendPrompt({
           inputVal: delHistory[0].value,
-          history: chatHistory.slice(0, index)
+          history: chatHistory.slice(0, index),
+          directHandle: true
         });
       } catch (error) { }
       setLoading(false);
@@ -630,7 +633,8 @@ const ChatBox = (
     scrollToBottom,
     sendPrompt: (question: string) => {
       sendPrompt({
-        inputVal: question
+        inputVal: question,
+        directHandle: true
       });
     }
   }));
@@ -751,7 +755,8 @@ const ChatBox = (
       const { data }: MessageEvent<{ type: 'sendPrompt'; text: string }> = event;
       if (data?.type === 'sendPrompt' && data?.text) {
         sendPrompt({
-          inputVal: data.text
+          inputVal: data.text,
+          directHandle: true
         });
       }
       console.log('ChatBox eventListener windowMessage Received message from parent:', event.data);
@@ -763,7 +768,8 @@ const ChatBox = (
     eventBus.on(EventNameEnum.sendQuestion, ({ text }: { text: string }) => {
       if (!text) return;
       sendPrompt({
-        inputVal: text
+        inputVal: text,
+        directHandle: true
       });
     });
     eventBus.on(EventNameEnum.editQuestion, ({ text }: { text: string }) => {
@@ -1119,7 +1125,13 @@ const ChatBox = (
             if (index >= 0 && index < chatBottomGuideItems.length) {
               const guideItem = chatBottomGuideItems[index];
               if (guideItem.questionId === 'human-handler') {
-                humanServiceHandler({});
+                if (!accessToken) {
+                  humanServiceHandler({});
+                } else {
+                  sendPrompt({
+                    inputVal: "转人工"
+                  });
+                }
               } else {
                 sendPrompt({
                   inputVal: guideItem.question
@@ -1515,6 +1527,8 @@ const ChatBottomGuideComponent = React.memo(function ChatBottomGuideComponent({
         transform: 'translateY(-100%)'
       }}
       zIndex={100}
+      justifyContent="center" // 水平居中
+      alignItems="center"     // 垂直居中
     >
       <HStack spacing={'8px'} alignItems="center" whiteSpace={'nowrap'} overflowX={'auto'} zIndex={100}>
         {items.map((item, index) => (
