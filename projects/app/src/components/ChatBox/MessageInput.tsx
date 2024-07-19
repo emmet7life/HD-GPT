@@ -630,8 +630,22 @@ const MessageInput = ({
           visibility={isSpeaking && isTransCription ? 'visible' : 'hidden'}
         >
           <Spinner size={'sm'} mr={4} />
-          {t('core.chat.Converting to text')}
+          {t('core.chat.AI Generate Tips')}
         </Flex>
+
+        {/* 声明 */}
+        <Center
+          position={'absolute'}
+          bottom={0}
+          left={0}
+          right={0}
+          zIndex={1}
+          textAlign={'center'}
+          color={'#c1c1c3'}
+          fontSize={'10px'}
+        >
+          内容由AI大模型生成，请注意甄别
+        </Center>
 
         {/* file preview */}
         <Flex wrap={'wrap'} px={[2, 4]} userSelect={'none'}>
@@ -697,7 +711,7 @@ const MessageInput = ({
 
         <Flex
           bg={'white'}
-          pb={['8px', '0px']}
+          pb={['12px', '0px']}
           alignItems={'flex-end'}
           mt={fileList.length > 0 ? 1 : 0}
           pl={[3, 4]}
@@ -732,9 +746,13 @@ const MessageInput = ({
             pr={['3px', '3px']}
             {...(isPc
               ? {
-                border: 'none',
+                // border: 'none',
+                // _focusVisible: {
+                //   border: 'none'
+                // }
+                border: '1px solid rgba(212, 212, 212, 1.0)',
                 _focusVisible: {
-                  border: 'none'
+                  border: '1px solid #20599b'
                 }
               }
               : {
@@ -852,6 +870,7 @@ const MessageInput = ({
             ) : (
               <Flex
                 mr={'0px'}
+                mb={'3px'}
                 alignItems={'center'}
                 justifyContent={'center'}
                 flexShrink={0}

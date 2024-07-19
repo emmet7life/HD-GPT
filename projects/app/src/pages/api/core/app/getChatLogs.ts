@@ -70,7 +70,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                   userGoodFeedback: 1,
                   userBadFeedback: 1,
                   customFeedbacks: 1,
-                  adminFeedback: 1
+                  adminFeedback: 1,
+                  sessionUserId: 1
                 }
               }
             ],
@@ -114,6 +115,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                   cond: { $ifNull: ['$$item.adminFeedback', false] }
                 }
               }
+            },
+            sessionUserId: {
+              $arrayElemAt: ['$chatitems.sessionUserId', 0]
             }
           }
         },
@@ -128,7 +132,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             userGoodFeedbackCount: 1,
             userBadFeedbackCount: 1,
             customFeedbacksCount: 1,
-            markCount: 1
+            markCount: 1,
+            sessionUserId: 1
           }
         }
       ]),

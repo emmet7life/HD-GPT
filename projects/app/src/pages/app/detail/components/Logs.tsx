@@ -62,6 +62,8 @@ const Logs = ({ appId }: { appId: string }) => {
     }
   });
 
+  console.log("Logs.tsx getAppChatLogs", logs);
+
   const [detailLogsId, setDetailLogsId] = useState<string>();
 
   return (
@@ -93,6 +95,7 @@ const Logs = ({ appId }: { appId: string }) => {
         <Table variant={'simple'} fontSize={'sm'}>
           <Thead>
             <Tr>
+              <Th>{t('app.Logs User ID')}</Th>
               <Th>{t('core.app.logs.Source And Time')}</Th>
               <Th>{t('app.Logs Title')}</Th>
               <Th>{t('app.Logs Message Total')}</Th>
@@ -110,6 +113,9 @@ const Logs = ({ appId }: { appId: string }) => {
                 title={'点击查看对话详情'}
                 onClick={() => setDetailLogsId(item.id)}
               >
+                <Td className="textEllipsis" maxW={'140px'}>
+                  {item.sessionUserId}
+                </Td>
                 <Td>
                   <Box>{t(ChatSourceMap[item.source]?.name || 'UnKnow')}</Box>
                   <Box color={'myGray.500'}>{dayjs(item.time).format('YYYY/MM/DD HH:mm')}</Box>

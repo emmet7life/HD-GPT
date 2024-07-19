@@ -41,4 +41,5 @@ export type AppLogsListItemType = {
   userBadFeedbackCount: number;
   customFeedbacksCount: number;
   markCount: number;
+  sessionUserId: string;
 };

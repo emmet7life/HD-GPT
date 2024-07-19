@@ -121,8 +121,9 @@ const WelcomeContainerStyle: BoxProps = {
   borderRadius: '0 8px 8px 8px',
   boxShadow: '0 0 4px rgb(212, 212, 212)',
   display: 'inline-block',
-  maxW: ['calc(100% - 0px)', 'calc(100% - 10px)'],
-  overflowX: 'auto',
+  maxW: ['calc(100% - 0px)', 'calc(100% - 0px)'],
+  overflowX: 'hidden',
+  overflowY: 'hidden',
   position: 'relative',
   zIndex: 2
 };
@@ -132,8 +133,8 @@ const WelcomeCardStyle: BoxProps = {
   boxShadow: '0 0 0px rgb(0, 0, 0)',
   display: 'inline-block',
   maxW: ['calc(100% - 0px)', 'calc(100% - 10px)'],
-  overflowX: 'hidden',
-  overflowY: 'hidden',
+  // overflowX: 'hidden',
+  // overflowY: 'hidden',
   position: 'relative',
   zIndex: 10
 };
@@ -1335,9 +1336,9 @@ const WelcomeText = React.memo(function Welcome({
   return (
     <Box py={3}>
       {/* message */}
-      <Box position='relative' w={'100%'} {...WelcomeContainerStyle} textAlign={'left'}>
+      <Box position='relative' w={'100%'} {...WelcomeContainerStyle} textAlign={'left'} bg={'transparent'}>
         {/* background */}
-        <Image src="/icon/welcomeBg.png" w={'100%'} h={'100%'} alt={''} objectFit={'cover'}
+        <Image src="/icon/welcomeBg.png" w={'110%'} h={'100%'} alt={''} objectFit={'fill'}
           position="absolute"
           top={0}
           left={0}
@@ -1345,12 +1346,12 @@ const WelcomeText = React.memo(function Welcome({
           right={0}
           zIndex="1" />
         {/* message card */}
-        <Card order={2} mt={2} {...WelcomeCardStyle} bg={'transparent'}>
-          <Flex w={'calc(100%)'} alignItems={'flex-end'} >
+        <Card w={'100%'} order={2} mt={2} {...WelcomeCardStyle} bg={'transparent'}>
+          <Flex w={'calc(100%)'} alignItems={'flex-end'} justifyContent={'space-between'}>
             {/* source={`~~~guide \n${welcomeText}`} */}
             <Markdown source={`${welcomeText}`} isChatting={false} customClassName={`${MarkdownStyles.welcomeCard}`} />
-            <Box w={'148px'} mr={'-20px'} mb={'-5px'} backgroundColor={"transparent"}>
-              <Image src="/icon/xiaodaCartoon.png" w={'100%'} alt={''} objectFit={'cover'} />
+            <Box w={'148px'} mr={'-25px'} mb={'-12px'} backgroundColor={"transparent"}>
+              <Image src="/icon/ai-xiaoda_blink7.gif" w={'100%'} alt={''} objectFit={'cover'} />
             </Box>
           </Flex>
         </Card>
