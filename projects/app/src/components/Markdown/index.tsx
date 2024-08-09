@@ -38,6 +38,13 @@ export enum CodeClassName {
   img = 'img'
 }
 
+// 在项目的入口文件中添加polyfill
+if (!Object.hasOwn) {
+  Object.hasOwn = function (obj, prop) {
+    return Object.prototype.hasOwnProperty.call(obj, prop);
+  };
+}
+
 const Markdown = ({ source, isChatting = false, customClassName = undefined }: { source: string; isChatting?: boolean, customClassName?: string }) => {
   const components = useMemo<any>(
     () => ({

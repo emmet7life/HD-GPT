@@ -35,6 +35,7 @@ type FastGptShareChatProps = {
   shareId?: string;
   outLinkUid?: string;
   userId?: string; // 会话用户ID
+  msgType?: string; // 消息类型
 };
 export type Props = ChatCompletionCreateParams &
   FastGptWebChatProps &
@@ -64,13 +65,14 @@ export default withNextCors(async function handler(req: NextApiRequest, res: Nex
     shareId,
     outLinkUid,
     userId, // 会话用户ID
+    msgType = 0,
     stream = false,
     detail = false,
     messages = [],
     variables = {}
   } = req.body as Props;
 
-  // console.log("对话接口 Chat API >> userId", userId);
+  console.log("对话接口 Chat API >> userId", userId, ", msgType", msgType, ", req.body", req.body);
 
   try {
     const originIp = requestIp.getClientIp(req);
@@ -89,16 +91,22 @@ export default withNextCors(async function handler(req: NextApiRequest, res: Nex
 
     let startTime = Date.now();
 
+    console.log("对话接口 Chat API >> messages", messages);
+
     const chatMessages = gptMessage2ChatType(messages);
     if (chatMessages[chatMessages.length - 1].obj !== ChatRoleEnum.Human) {
       chatMessages.pop();
     }
+
+    console.log("对话接口 Chat API >> chatMessages", chatMessages);
 
     // user question
     const question = chatMessages.pop();
     if (!question) {
       throw new Error('Question is empty');
     }
+
+    console.log("对话接口 Chat API >> question", question);
 
     /* auth app permission */
     const { user, app, responseDetail, authType, apikey, canWrite, uid } = await (async () => {
@@ -208,6 +216,9 @@ export default withNextCors(async function handler(req: NextApiRequest, res: Nex
     const concatHistories = history.concat(chatMessages);
     const responseChatItemId: string | undefined = messages[messages.length - 1].dataId;
 
+    console.log("对话接口 Chat API >> history", history);
+    console.log("对话接口 Chat API >> chatMessages", chatMessages);
+
     /* start flow controller */
     const { responseData, answerText } = await dispatchModules({
       res,
@@ -266,8 +277,12 @@ export default withNextCors(async function handler(req: NextApiRequest, res: Nex
 
     addLog.info(`completions running time: ${(Date.now() - startTime) / 1000}s`);
 
+    console.log("对话接口 Chat API >> canWrite", canWrite, ", responseData", responseData);
+
     /* select fe response field */
     const feResponseData = canWrite ? responseData : selectShareResponse({ responseData });
+
+    console.log("对话接口 Chat API >> stream", stream, ", feResponseData", feResponseData);
 
     if (stream) {
       responseWrite({

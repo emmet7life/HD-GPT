@@ -6,6 +6,7 @@ import { MongoChat } from '@fastgpt/service/core/chat/chatSchema';
 import { addLog } from '@fastgpt/service/common/system/log';
 import { chatContentReplaceBlock } from '@fastgpt/global/core/chat/utils';
 
+// 函数参数类型定义
 type Props = {
   chatId: string;
   appId: string;
@@ -21,6 +22,7 @@ type Props = {
   metadata?: Record<string, any>;
 };
 
+// 函数的主要目的是将聊天记录保存到数据库中，并根据需要更新相关记录和元数据。
 export async function saveChat({
   chatId,
   appId,
@@ -35,7 +37,13 @@ export async function saveChat({
   content,
   metadata = {}
 }: Props) {
+
+  content.forEach((item, index) => {
+    console.log("saveChat.ts >> saveChat >> content forEach ", index + 1, ", item.value", item.value, ", item", item);
+  });
+
   try {
+    // 查找聊天记录:
     const chat = await MongoChat.findOne(
       {
         chatId,
@@ -46,14 +54,27 @@ export async function saveChat({
       '_id metadata'
     );
 
+    // 合并元数据:
     const metadataUpdate = {
       ...chat?.metadata,
       ...metadata
     };
 
+    // 过滤出 value 不为空的 content 项
+    const validContent = content.filter(item => item.value !== undefined && item.value !== null && item.value !== '');
+
+    validContent.forEach((item, index) => {
+      console.log("saveChat.ts >> saveChat >> validContent forEach ", index + 1, ", item.value", item.value, ", item", item);
+    });
+
+    if (validContent.length === 0) {
+      throw new Error('No valid content to save');
+    }
+
+    // 插入聊天项:
     const promise: any[] = [
       MongoChatItem.insertMany(
-        content.map((item) => ({
+        validContent.map((item) => ({
           chatId,
           teamId,
           tmbId,
@@ -64,11 +85,14 @@ export async function saveChat({
       )
     ];
 
+    // 生成标题:
     const title =
       chatContentReplaceBlock(content[0].value).slice(0, 20) ||
       content[1]?.value?.slice(0, 20) ||
       'Chat';
 
+
+    // 更新或创建聊天记录:
     if (chat) {
       promise.push(
         MongoChat.updateOne(
@@ -98,6 +122,7 @@ export async function saveChat({
       );
     }
 
+    // 更新应用使用时间:
     if (updateUseTime && source === ChatSourceEnum.online) {
       promise.push(
         MongoApp.findByIdAndUpdate(appId, {
@@ -106,6 +131,7 @@ export async function saveChat({
       );
     }
 
+    // 并发执行所有操作:
     await Promise.all(promise);
   } catch (error) {
     addLog.error(`update chat history error`, error);

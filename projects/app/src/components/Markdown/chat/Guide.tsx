@@ -11,6 +11,13 @@ import 'katex/dist/katex.min.css';
 import styles from '../index.module.scss';
 import Image from '../img/Image';
 
+// 在项目的入口文件中添加polyfill
+if (!Object.hasOwn) {
+  Object.hasOwn = function (obj, prop) {
+    return Object.prototype.hasOwnProperty.call(obj, prop);
+  };
+}
+
 function MyLink(e: any) {
   const href = e.href;
   const text = String(e.children);

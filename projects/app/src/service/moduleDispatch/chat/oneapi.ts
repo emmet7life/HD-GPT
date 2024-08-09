@@ -65,10 +65,13 @@ export const dispatchChatCompletion = async (props: ChatProps): Promise<ChatResp
 
   stream = stream && isResponseAnswerText;
 
-  // console.log("moduleDispatch >> oneapi.ts >> completions >> systemPrompt", systemPrompt);
-  // console.log("moduleDispatch >> oneapi.ts >> completions >> userChatInput", userChatInput);
-  // console.log("moduleDispatch >> oneapi.ts >> completions >> history count", history);
+  console.log("moduleDispatch >> oneapi.ts >> completions >> systemPrompt", systemPrompt);
+  console.log("moduleDispatch >> oneapi.ts >> completions >> userChatInput", userChatInput);
+  console.log("moduleDispatch >> oneapi.ts >> completions >> history count", history);
+  console.log("moduleDispatch >> oneapi.ts >> completions >> histories", histories);
+
   const chatHistories = getHistories(history, histories);
+  console.log("moduleDispatch >> oneapi.ts >> completions >> chatHistories", chatHistories);
 
   // temperature adapt
   const modelConstantsData = getChatModel(model);
